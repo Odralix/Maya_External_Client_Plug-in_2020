@@ -5,7 +5,7 @@
 // Declare our game instance
 MayaViewer game;
 
-constexpr int gModelCount = 10;
+constexpr int gModelCount = 1;
 static bool gKeys[256] = {};
 int gDeltaX;
 int gDeltaY;
@@ -39,6 +39,11 @@ void MayaViewer::initialize()
 	lightNode->translate(Vector3(0, 1, 5));
 
 	//Mesh* mesh1 = createCubeMesh(1.0);
+
+	int type = 1;
+	size_t hSize = sizeof(int);
+	consumer.recv((char*)&type, hSize);
+
 	MeshHeader head = readHeader();
 	Mesh* mesh1 = setupInputMesh(head);
 
@@ -81,20 +86,20 @@ void MayaViewer::update(float elapsedTime)
 	float step = 360.0 / float(gModelCount);
 	char name[10] = {};
 
-	for (int i = 0; i < gModelCount; i++)
-	{
-		sprintf(name, "cube%d", i);
-		Node* node = _scene->findNode(name);
-		if (node) {
-			node->setScale(0.3f);
-			node->setTranslation(
-				cosf(MATH_DEG_TO_RAD(((int)totalTime / 10) % 360 + i * step))*5.0, 
-				sinf(MATH_DEG_TO_RAD(((int)totalTime / 10) % 360 + i * step))*5.0,
-				0.0);
-		}
-		if (i%2)
-			node->rotateX(elapsedTime / 1000.f);
-	}	
+	//for (int i = 0; i < gModelCount; i++)
+	//{
+	//	sprintf(name, "cube%d", i);
+	//	Node* node = _scene->findNode(name);
+	//	if (node) {
+	//		node->setScale(0.3f);
+	//		node->setTranslation(
+	//			cosf(MATH_DEG_TO_RAD(((int)totalTime / 10) % 360 + i * step))*5.0, 
+	//			sinf(MATH_DEG_TO_RAD(((int)totalTime / 10) % 360 + i * step))*5.0,
+	//			0.0);
+	//	}
+	//	if (i%2)
+	//		node->rotateX(elapsedTime / 1000.f);
+	//}	
 
 	Node* camnode = _scene->getActiveCamera()->getNode();
 	if (gKeys[Keyboard::KEY_W])
@@ -109,6 +114,7 @@ void MayaViewer::update(float elapsedTime)
 	//MY STUFF__________________________________________________________
 	//char stuff[1024*3] = { 0 };
 	/*consumer.recv(static_cast<char*>(stuff), size);*/
+	//msgDirector();
 
 	if (gMousePressed) {
 		camnode->rotate(camnode->getRightVectorWorld(), MATH_DEG_TO_RAD(gDeltaY / 10.0));
@@ -154,8 +160,7 @@ void MayaViewer::keyEvent(Keyboard::KeyEvent evt, int key)
 		switch (key)
 		{
 		case Keyboard::KEY_P:
-			MeshHeader head = readHeader();
-			Mesh* mesh1 = setupInputMesh(head);
+			msgDirector();
 			break;
 		};
 	}
@@ -330,4 +335,49 @@ MeshHeader MayaViewer::readHeader()
 	consumer.recv((char*)&mHead, hSize);
 
 	return mHead;
+}
+
+void MayaViewer::msgDirector()
+{
+	int a=0;
+	size_t hSize = sizeof(int);
+	consumer.recv((char*)&a, hSize);
+
+	switch (a)
+	{
+	case meshType:
+		//MeshHeader head = readHeader();
+		//Mesh* mesh1 = setupInputMesh(head);
+		break;
+	case transformType:
+		//Need len ahead of time.
+		char name[42] = "0";
+		size_t nameLength;
+		double transform[10];
+		size_t tLen = sizeof(transform);
+		consumer.recv(name, nameLength);
+		consumer.recv((char*)transform, tLen);
+		applyTransformation(name, transform);
+		break;
+		
+	}
+
+
+}
+
+void MayaViewer::applyTransformation(char * name, double * transform)
+{
+	Node* node = _scene->findNode("cube0");
+
+	if (node)
+	{
+		const Vector3 translation((float)transform[0], (float)transform[1], (float)transform[2]);
+		const Vector3 scale((float)transform[3], (float)transform[4], (float)transform[5]);
+		const Quaternion rotation((float)transform[6], (float)transform[7], (float)transform[8], (float)transform[9]);
+
+		node->setTranslation(translation);
+		node->setScale(scale);
+		node->setRotation(rotation);
+	}
+	
 }

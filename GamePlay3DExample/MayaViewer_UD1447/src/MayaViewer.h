@@ -65,6 +65,8 @@ private:
 	Mesh * createImportMesh(float * verts, int* indicies, int vtxNr, int indexNr);
 	Mesh * setupInputMesh(MeshHeader &mHead);
 	MeshHeader readHeader();
+	void msgDirector();
+	void applyTransformation(char * name, double * transform);
 	Material* createMaterial();
 
 

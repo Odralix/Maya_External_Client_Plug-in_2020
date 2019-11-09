@@ -1,13 +1,11 @@
 #pragma once
 
-struct MsgType
+
+enum MsgType
 {
-	enum type
-	{
-		mesh = 0,
-		transform = 1,
-		nameChange = 2,
-	};
+	meshType = 0,
+	transformType = 1,
+	nameChangeType = 2,
 };
 
 struct MeshHeader

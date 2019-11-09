@@ -56,6 +56,43 @@ void nodeTransformChanged(MNodeMessage::AttributeMessage msg, MPlug &plug, MPlug
 
 			cout << " Global Transform: " << endl;
 			cout << worldMat << endl;
+
+		/*	float transform[4][4] = { 0 };
+
+			worldMat.get(transform);*/
+
+			MFnTransform parser;
+			parser.set(worldMat);
+
+			MVector translation = parser.getTranslation(MSpace::kWorld);
+			double transDouble[3];
+			translation.get(transDouble);
+
+			double scaleDouble[3];
+			parser.getScale(scaleDouble);
+
+			double quatDouble[4];
+			parser.getRotationQuaternion(quatDouble[0], quatDouble[1], quatDouble[2], quatDouble[3], MSpace::kWorld);
+
+			double transform[10];
+
+			for (int i = 0; i < 3; i++)
+			{
+				transform[i] = transDouble[i];
+				transform[i + 3] = scaleDouble[i];
+			}
+
+			for (int i = 6; i < 10; i++)
+			{
+				transform[i] = quatDouble[i-6];
+			}
+			int len = 0;
+			const char* name = nameFetch.name().asChar(len);
+			
+			int nr = 1;
+			producer.send(&nr, sizeof(int));
+			producer.send(name, len);
+			producer.send(transform, sizeof(transform));
 		}
 	}
 }
@@ -216,6 +253,10 @@ void nodeMeshAttributeChanged(MNodeMessage::AttributeMessage msg, MPlug &plug, M
 				}
 			}
 			// Sending the collected information.
+
+			/*MsgType type = meshType;*/
+			int nr = 0;
+			producer.send(&nr, sizeof(int));
 			producer.send(&meshHead, sizeof(MeshHeader));
 			producer.send(triIndicies, meshHead.indexCount * sizeof(int));
 			producer.send(verts, meshHead.nrOfVerts * 8 * sizeof(float));
