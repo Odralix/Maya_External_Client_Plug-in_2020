@@ -1,6 +1,5 @@
 #include "MayaViewer.h"
 #include "ComLib_reference.h"
-#include "../../Structs.h"
 #include <string>
 
 // Declare our game instance
@@ -40,7 +39,8 @@ void MayaViewer::initialize()
 	lightNode->translate(Vector3(0, 1, 5));
 
 	//Mesh* mesh1 = createCubeMesh(1.0);
-	Mesh* mesh1 = setupInputMesh();
+	MeshHeader head = readHeader();
+	Mesh* mesh1 = setupInputMesh(head);
 
 	Model* models[gModelCount];
 	Material* mats[gModelCount];
@@ -150,6 +150,14 @@ void MayaViewer::keyEvent(Keyboard::KeyEvent evt, int key)
 	else if (evt == Keyboard::KEY_RELEASE)
 	{
 		gKeys[key] = false;
+
+		switch (key)
+		{
+		case Keyboard::KEY_P:
+			MeshHeader head = readHeader();
+			Mesh* mesh1 = setupInputMesh(head);
+			break;
+		};
 	}
 }
 
@@ -247,11 +255,6 @@ Mesh * MayaViewer::createImportMesh(float * verts, int* indicies, int vtxNr, int
 	};
 	Mesh* mesh = Mesh::createMesh(VertexFormat(elements, 3), vtxNr, false);
 
-	short indices[] =
-	{
-		0, 1, 2, 2, 1, 3, 4, 5, 6, 6, 5, 7, 8, 9, 10, 10, 9, 11, 12, 13, 14, 14, 13, 15, 16, 17, 18, 18, 17, 19, 20, 21, 22, 22, 21, 23
-	};
-
 	if (mesh == NULL)
 	{
 		GP_ERROR("Failed to create mesh.");
@@ -271,14 +274,10 @@ Mesh * MayaViewer::createImportMesh(float * verts, int* indicies, int vtxNr, int
 	return mesh;
 }
 
-Mesh * MayaViewer::setupInputMesh()
+Mesh * MayaViewer::setupInputMesh(MeshHeader &mHead)
 {
-	MeshHeader mHead;
-	size_t hSize = sizeof(MeshHeader);
 	size_t inSize = 0;
 	size_t vertSize = 0;
-
-	consumer.recv((char*)&mHead, hSize);
 
 	int * arr = new int[mHead.indexCount];
 
@@ -321,4 +320,14 @@ Mesh * MayaViewer::setupInputMesh()
 	}
 
 	return createImportMesh(verts, arr, mHead.nrOfVerts, mHead.indexCount);
+}
+
+MeshHeader MayaViewer::readHeader()
+{
+	MeshHeader mHead;
+	size_t hSize = sizeof(MeshHeader);
+
+	consumer.recv((char*)&mHead, hSize);
+
+	return mHead;
 }

@@ -2,6 +2,7 @@
 #define MayaViewer_H_
 
 #include "gameplay.h"
+#include "../../Structs.h"
 
 using namespace gameplay;
 
@@ -62,7 +63,8 @@ private:
 
 	Mesh* createCubeMesh(float size = 1.0f);
 	Mesh * createImportMesh(float * verts, int* indicies, int vtxNr, int indexNr);
-	Mesh * setupInputMesh();
+	Mesh * setupInputMesh(MeshHeader &mHead);
+	MeshHeader readHeader();
 	Material* createMaterial();
 
 

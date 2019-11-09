@@ -9,7 +9,7 @@
 #include <map>
 #include "ComLib_reference.h"
 #include "../Structs.h"
-//
+
 using namespace std;
 MCallbackIdArray callbackIdArray;
 MObject m_node;
@@ -116,22 +116,6 @@ void nodeMeshAttributeChanged(MNodeMessage::AttributeMessage msg, MPlug &plug, M
 			//Replace old vertex array and print the new info out.
 			mapOfVertexArrays[meshName] = vertexArr.length();
 			cout << meshNode.name() << " Topology Changed! " << "New vertex locations: " << endl;
-		/*	VertexArray verts;*/
-
-		//	float ** a = new float*[vertexArr.length()];
-
-		//	for (int i = 0; i < vertexArr.length(); i++)
-		//	{
-		//		a[i] = new float[4];
-		//	}
-
-		//	/*float arr*[4] = new float*[4];*/
-
-		////https://stackoverflow.com/questions/1810083/c-pointers-pointing-to-an-array-of-fixed-size
-
-		//	vertexArr.get(a);
-
-		//	producer.send(&verts, sizeof(verts));
 
 			//Getting the number of verts
 			MeshHeader meshHead;
@@ -141,184 +125,11 @@ void nodeMeshAttributeChanged(MNodeMessage::AttributeMessage msg, MPlug &plug, M
 			MIntArray triCounts;
 			MIntArray triVerts;
 
-			// I HAAAAVE TO GET INDICES A DIFFERENT WAY. THIS IS INNACURATE FOR OTHER PROGRAM
 			inputMesh.getTriangleOffsets(triCounts, triVerts);
-
-			//int fID = 0;
-			//for (int i = 0; i < triVerts.length(); i++)
-			//{
-			//	if (i != 0)
-			//	{
-			//		if (i % 6 == 0)
-			//		{
-			//			fID++;
-			//		}
-			//		//FaceID*3 + FaceID - FaceVertexID = vertID
-
-
-			//	}
-			//}
-
-			MIntArray nrOfTri;
-			MIntArray triVertsID;
-
-			inputMesh.getTriangles(nrOfTri, triVertsID);
-
-			cout << nrOfTri << endl;
-
-			MIntArray faceVertIndicies;
-
-			MIntArray TheFinalVerts;
-
-
-			cout << triVertsID << endl;
-
-			int trisCount = 0;
-			for (int i = 0; i < triVertsID.length(); i++)
-			{
-	
-				if (trisCount < 3 )
-				{
-					faceVertIndicies.append(triVertsID[i]);
-					trisCount++;
-				}
-				else
-				{
-					//Skip 2 duplicates.
-					i += 2;
-					//Append the 4th vert before moving on to the next set of triangles.
-					faceVertIndicies.append(triVertsID[i]);
-					trisCount = 0;
-				}
-			}
-
-			//trisCount = 0;
-			//int trisID = 0;
-
-			////I will ignore N-gon case. Assume all Tris or Quads
-			//int nrOfPolygons = nrOfTri.length();
-			//int polyID = 0;
-
-			//for (int i = 0; i < triVertsID.length(); i++)
-			//{
-			//	//If starting on new triangle
-			//	if (trisCount == 2)
-			//	{
-			//		trisCount = 0;
-			//		trisID++;
-			//	}
-
-			//	int polyCheck = 0;
-
-			//	for (int j = 0; j < nrOfPolygons; j++)
-			//	{
-			//		polyCheck += nrOfTri[j];
-
-			//		if (polyCheck >= trisID)
-			//		{
-			//			polyID = j;
-			//			j = nrOfPolygons;
-			//		}
-			//	}
-
-			///*	int vertList[3] = { 0 };
-			//	inputMesh.getPolygonTriangleVertices(polyID, trisID, vertList);*/
-			//	MIntArray polyVertList;
-
-			//	inputMesh.getPolygonVertices(polyID, polyVertList);
-
-			//	//Note formula only works for a mesh made of only quads.
-			//	TheFinalVerts.append(polyVertList[0]);
-			//	TheFinalVerts.append(polyVertList[1]);
-			//	TheFinalVerts.append(polyVertList[2]);
-
-			//	trisCount++;
-			//}
-
-			//cout << "______________________" << endl;
-			//cout << TheFinalVerts << endl;
-
-
-			cout << faceVertIndicies << endl;
-
-			float * vPosArr = new float[faceVertIndicies.length() * 3];
-			int posCount = 0;
-
-			for (int i = 0; i < faceVertIndicies.length(); i++)
-			{
-				MPoint pos;
-				inputMesh.getPoint(faceVertIndicies[i], pos);
-				float arr[4] = { 0.0f };
-				pos.get(arr);
-
-				vPosArr[posCount] = arr[0];
-				posCount++;
-				vPosArr[posCount] = arr[1];
-				posCount++;
-				vPosArr[posCount] = arr[2];
-				posCount++;
-			}
-
-			int n = 0;
-			for (int i = 0; i < faceVertIndicies.length() * 3; i++)
-			{
-
-				cout << vPosArr[i] << " ";
-				n++;
-				if (n == 3)
-				{
-					cout << endl;
-					n = 0;
-				}
-			}
-			//_______________________________________________________________________________
-			/*MIntArray vCount;
-			MIntArray vList;
-			inputMesh.getVertices(vCount, vList);
-
-			cout << vCount << endl;
-			cout << vList << endl;
-
-			float * vPosArr = new float[vList.length() * 3];
-			int posCount = 0;
-
-			for (int i = 0; i < vList.length(); i++)
-			{
-				MPoint pos;
-				inputMesh.getPoint(vList[i], pos);
-				float arr [4] = { 0.0f };
-				pos.get(arr);
-
-				vPosArr[posCount] = arr[0];
-				posCount++;
-				vPosArr[posCount] = arr[1];
-				posCount++;
-				vPosArr[posCount] = arr[2];
-				posCount++;
-			}
-
-			int n = 0;
-			for (int i = 0; i < vList.length()*3; i++)
-			{
-
-				cout << vPosArr[i] << " ";
-				n++;
-				if (n == 3)
-				{
-					cout << endl;
-					n = 0;
-				}
-			}*/
-
-			//MFloatPointArray points;
-			//inputMesh.getPoints(points, MSpace::kWorld);
-			//
-
-			//MFloatPoint * pointArr = new MFloatPoint[]
-
 
 			meshHead.indexCount = triVerts.length();
 
+			//Put indicies into an int-array
 			int * triIndicies = new int[meshHead.indexCount];
 			triVerts.get(triIndicies);
 
@@ -327,43 +138,6 @@ void nodeMeshAttributeChanged(MNodeMessage::AttributeMessage msg, MPlug &plug, M
 				cout << triIndicies[i] << " ";
 			}
 			cout << endl;
-
-	/*		MIntArray vtxCount;
-			MIntArray vtxArr;
-
-			inputMesh.getVertices(vtxCount, vtxArr);
-
-			cout << vtxArr << endl;*/
-
-			//MIntArray collectTris;
-
-			//MItMeshPolygon iterator2(Mnode, &status);
-			//while (!iterator2.isDone())
-			//{
-			//	MPointArray triPoints;
-			//	MIntArray triList;
-			//	int count = 0;
-			//	iterator2.numTriangles(count);
-			//	iterator2.getTriangles(triPoints, triList);
-
-			//	for (int i = 0; i < count; i++)
-			//	{
-			//		collectTris.append(triList[i]);
-			//	}
-			//	//for (int i = 0; i < iterator2.polygonVertexCount(); i++)
-			//	//{
-			//	//	
-			//	//	cout << iterator2.polygonVertexCount() << endl;
-			//	//	cout << iterator2. << endl;
-			//	//}
-			//	iterator2.next();
-			//}
-
-			//for (int i = 0; i < collectTris.length(); i++)
-			//{
-			//	cout << collectTris[i] << " ";
-			//}
-			//cout << endl;
 
 			int numFaceVertices = meshHead.nrOfVerts;
 
@@ -378,11 +152,6 @@ void nodeMeshAttributeChanged(MNodeMessage::AttributeMessage msg, MPlug &plug, M
 			int nCount = 0;
 			int uvCount = 0;
 
-			int * newTriIndicies = new int[meshHead.indexCount];
-			int iCount = 0;
-
-			int triCount = 0;
-
 			MVector normals;
 			int i = 0;
 			MItMeshFaceVertex iterator(Mnode, &status);
@@ -392,16 +161,6 @@ void nodeMeshAttributeChanged(MNodeMessage::AttributeMessage msg, MPlug &plug, M
 				iterator.getNormal(normals, MSpace::kObject);
 				float2 temp;
 				iterator.getUV(temp);
-
-				//for (int j = 0; j < meshHead.indexCount; j++)
-				//{
-				//	if (triVerts[j] == i)
-				//	{
-				//		newTriIndicies[iCount] = triVerts[j];
-				//		triVerts[j] = -1; //So it never matches again.
-				//		iCount++;
-				//	}
-				//}
 
 				double get[3];
 				normals.get(get);
@@ -419,32 +178,10 @@ void nodeMeshAttributeChanged(MNodeMessage::AttributeMessage msg, MPlug &plug, M
 				/*	cout << UVArr[uvCount] << " ";*/
 					uvCount++;
 				}
-				/*cout << endl;*/
-				/*cout << "]" << endl;*/
-
-				/*		iterator.getNormal();
-						iterator.getBinormal();
-						iterator.getTangent();
-						iterator.getUV()*/
-
-				//cout << "[";
-				//for (int j = 0; j < 4; j++)
-				//{
-				//	cout << posArr[i][j];
-				//	cout << " ";
-				//}
-				//cout << "]" << endl;
 
 				i++;
-				triCount++;
 				iterator.next();
 			}
-
-			//for (int i = 0; i < meshHead.indexCount; i++)
-			//{
-			//	cout << newTriIndicies[i] << " ";
-			//}
-			//cout << endl;
 
 			//3+3+2 = 8 values per vert.
 			float * verts = new float[numFaceVertices * 8];
@@ -463,7 +200,6 @@ void nodeMeshAttributeChanged(MNodeMessage::AttributeMessage msg, MPlug &plug, M
 					count++;
 					count4++;
 				}
-				cout << endl;
 
 				for (int j = 0; j < 3; j++)
 				{
@@ -479,29 +215,7 @@ void nodeMeshAttributeChanged(MNodeMessage::AttributeMessage msg, MPlug &plug, M
 					count++;
 				}
 			}
-
-			/*cout << "Single Array: " << endl;
-			cout << "nr of verts: " << endl;
-			cout << meshHead.nrOfVerts << endl;
-			int c = 0;
-			for (int i = 0; i < numFaceVertices*3 *2; i++)
-			{
-				cout << verts[i] << " ";
-				c++;
-				if (c == 6)
-				{
-					cout << endl;
-					c = 0;
-				}
-			}
-			cout << endl;*/
-
-			//for (int i = 0; i < meshHead.indexCount; i++)
-			//{
-			//	cout << triIndicies[i] << " ";
-			//}
-			//cout << endl;
-
+			// Sending the collected information.
 			producer.send(&meshHead, sizeof(MeshHeader));
 			producer.send(triIndicies, meshHead.indexCount * sizeof(int));
 			producer.send(verts, meshHead.nrOfVerts * 8 * sizeof(float));
@@ -511,24 +225,9 @@ void nodeMeshAttributeChanged(MNodeMessage::AttributeMessage msg, MPlug &plug, M
 				delete[] posArr[i];
 			}
 			delete[] posArr;
-			delete[] newTriIndicies;
-
 			delete[] UVArr;
-		/*	producer.send(posArr, meshHead.nrOfVerts * 4 * sizeof(float));*/
-
-			/*producer.send(points)*/
-			//for (int i = 0; i < inputMesh.numVertices; i++)
-			//{
-			//	if (i = 0)
-			//	{
-			//		producer.send(&inputMesh.numVertices, sizeof(int));
-			//	}
-			//	producer.send(&points[i], sizeof(float));
-			//}
-
+			delete[] normArr;
 			delete[] verts;
-
-			/*cout << vertexArr << endl;*/
 		}
 	}
 }
