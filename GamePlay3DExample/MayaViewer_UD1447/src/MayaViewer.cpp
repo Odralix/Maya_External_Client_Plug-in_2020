@@ -114,7 +114,7 @@ void MayaViewer::update(float elapsedTime)
 	//MY STUFF__________________________________________________________
 	//char stuff[1024*3] = { 0 };
 	/*consumer.recv(static_cast<char*>(stuff), size);*/
-	//msgDirector();
+	msgDirector();
 
 	if (gMousePressed) {
 		camnode->rotate(camnode->getRightVectorWorld(), MATH_DEG_TO_RAD(gDeltaY / 10.0));
@@ -351,7 +351,7 @@ void MayaViewer::msgDirector()
 		break;
 	case transformType:
 		//Need len ahead of time.
-		char name[42] = "0";
+		char name[8] = "0";
 		size_t nameLength;
 		double transform[10];
 		size_t tLen = sizeof(transform);

@@ -62,7 +62,12 @@ void nodeTransformChanged(MNodeMessage::AttributeMessage msg, MPlug &plug, MPlug
 			worldMat.get(transform);*/
 
 			MFnTransform parser;
-			parser.set(worldMat);
+			const MTransformationMatrix aMat(worldMat);
+		/*	parser.set(aMat);
+
+			cout << worldMat << endl;
+			cout << parser.transformation(&status).asMatrix() << endl;
+			cout << aMat.asMatrix() << endl;
 
 			MVector translation = parser.getTranslation(MSpace::kWorld);
 			double transDouble[3];
@@ -73,6 +78,17 @@ void nodeTransformChanged(MNodeMessage::AttributeMessage msg, MPlug &plug, MPlug
 
 			double quatDouble[4];
 			parser.getRotationQuaternion(quatDouble[0], quatDouble[1], quatDouble[2], quatDouble[3], MSpace::kWorld);
+			*/
+
+			MVector trans = aMat.getTranslation(MSpace::kWorld, &status);
+			double transDouble[3];
+			trans.get(transDouble);
+
+			double scaleDouble[3];
+			aMat.getScale(scaleDouble, MSpace::kWorld);
+
+			double quatDouble[4];
+			aMat.getRotationQuaternion(quatDouble[0], quatDouble[1], quatDouble[2], quatDouble[3]);
 
 			double transform[10];
 
@@ -86,13 +102,19 @@ void nodeTransformChanged(MNodeMessage::AttributeMessage msg, MPlug &plug, MPlug
 			{
 				transform[i] = quatDouble[i-6];
 			}
+
 			int len = 0;
 			const char* name = nameFetch.name().asChar(len);
+			
+			for (int i = 0; i < 10; i++)
+			{
+				cout << transform[i] << endl;
+			}
 			
 			int nr = 1;
 			producer.send(&nr, sizeof(int));
 			producer.send(name, len);
-			producer.send(transform, sizeof(transform));
+			producer.send(transform, 10*sizeof(double));
 		}
 	}
 }
