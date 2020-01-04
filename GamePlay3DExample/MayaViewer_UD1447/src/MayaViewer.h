@@ -72,6 +72,7 @@ private:
 
     Scene* _scene;
     bool _wireframe;
+	MeshHeader *inMeshArr;
 };
 
 #endif

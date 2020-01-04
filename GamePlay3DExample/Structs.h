@@ -1,5 +1,12 @@
 #pragma once
 
+struct MasterHeader
+{
+	int meshCount;
+	int transformCount;
+	//int matCount;
+	bool camChanged;
+};
 
 enum MsgType
 {
@@ -13,6 +20,12 @@ struct MeshHeader
 	int nrOfVerts;
 	int indexCount;
 	char meshName[42];
+};
+
+struct TransHeader
+{
+	char name[42];
+	//double transform[10];
 };
 
 struct NewName

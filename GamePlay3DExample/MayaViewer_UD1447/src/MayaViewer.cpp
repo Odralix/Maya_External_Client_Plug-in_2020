@@ -339,28 +339,57 @@ MeshHeader MayaViewer::readHeader()
 
 void MayaViewer::msgDirector()
 {
-	int a=0;
-	size_t hSize = sizeof(int);
-	consumer.recv((char*)&a, hSize);
+	MasterHeader *head;
+	size_t Mlen;
+	consumer.recv((char*)head, Mlen);
 
-	switch (a)
+	if (head->meshCount != 0)
 	{
-	case meshType:
-		//MeshHeader head = readHeader();
-		//Mesh* mesh1 = setupInputMesh(head);
-		break;
-	case transformType:
-		//Need len ahead of time.
+		delete[] inMeshArr;
+		inMeshArr = new MeshHeader[head->meshCount];
+
+		for (int i = 0; i < head->meshCount; i++)
+		{
+			setupInputMesh(inMeshArr[i]);
+		}
+	}
+
+	if (head->transformCount != 0)
+	{
 		char name[8] = "0";
 		size_t nameLength;
 		double transform[10];
 		size_t tLen = sizeof(transform);
+
 		consumer.recv(name, nameLength);
 		consumer.recv((char*)transform, tLen);
 		applyTransformation(name, transform);
-		break;
-		
 	}
+
+
+
+	//int a=0;
+	//size_t hSize = sizeof(int);
+	//consumer.recv((char*)&a, hSize);
+
+	//switch (a)
+	//{
+	//case meshType:
+	//	//MeshHeader head = readHeader();
+	//	//Mesh* mesh1 = setupInputMesh(head);
+	//	break;
+	//case transformType:
+	//	//Need len ahead of time.
+	//	char name[8] = "0";
+	//	size_t nameLength;
+	//	double transform[10];
+	//	size_t tLen = sizeof(transform);
+	//	consumer.recv(name, nameLength);
+	//	consumer.recv((char*)transform, tLen);
+	//	applyTransformation(name, transform);
+	//	break;
+	//	
+	//}
 
 
 }
