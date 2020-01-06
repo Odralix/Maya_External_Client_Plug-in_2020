@@ -24,12 +24,24 @@
     <ClInclude Include="..\Structs.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="MayaBatchOutput.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Mesh.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="mayaRun.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="ComLib_reference.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="MayaBatchOutput.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Mesh.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

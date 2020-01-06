@@ -187,12 +187,16 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="ComLib_reference.cpp" />
+    <ClCompile Include="MayaBatchOutput.cpp" />
     <ClCompile Include="mayaRun.cpp" />
+    <ClCompile Include="Mesh.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\Structs.h" />
     <ClInclude Include="ComLib_reference.h" />
+    <ClInclude Include="MayaBatchOutput.h" />
     <ClInclude Include="maya_includes.h" />
+    <ClInclude Include="Mesh.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

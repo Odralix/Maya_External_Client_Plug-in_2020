@@ -1,5 +1,7 @@
 #pragma once
 
+#define NAME_LEN 42
+
 struct MasterHeader
 {
 	int meshCount;
@@ -19,17 +21,17 @@ struct MeshHeader
 {
 	int nrOfVerts;
 	int indexCount;
-	char meshName[42];
+	char meshName[NAME_LEN];
 };
 
 struct TransHeader
 {
-	char name[42];
+	char name[NAME_LEN];
 	//double transform[10];
 };
 
 struct NewName
 {
-	char oldName[42];
-	char newName[42];
+	char oldName[NAME_LEN];
+	char newName[NAME_LEN];
 };
