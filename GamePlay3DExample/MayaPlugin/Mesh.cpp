@@ -35,7 +35,8 @@ void Mesh::SetTriIndicies(int* indicies, int size)
 void Mesh::SetVerts(float* newVerts, int size)
 {
 	delete[] verts;
-	newVerts = new float[size];
+	//newVerts = new float[size]; <-- Possibly the dumbest and most basic mistake I've ever made.
+	verts = new float[size];
 	for (int i = 0; i < size; i++)
 	{
 		verts[i] = newVerts[i];
@@ -60,12 +61,12 @@ void Mesh::SetICount(int newCount)
 	indexCount = newCount;
 }
 
-int * Mesh::GetIndicies()
+int * Mesh::GetIndicies() const
 {
 	return triIndicies;
 }
 
-float * Mesh::GetVerts()
+float * Mesh::GetVerts() const
 {
 	return verts;
 }
@@ -75,12 +76,12 @@ float * Mesh::GetVerts()
 //	return transform;
 //}
 
-int Mesh::GetNrOfVerts()
+int Mesh::GetNrOfVerts() const
 {
 	return nrOfVerts;
 }
 
-int Mesh::GetIndexCount()
+int Mesh::GetIndexCount() const
 {
 	return indexCount;
 }

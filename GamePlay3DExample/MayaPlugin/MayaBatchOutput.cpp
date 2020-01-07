@@ -27,7 +27,8 @@ void MayaBatchOutput::SetMesh(MeshHeader head, int * indexArr, float * verts)
 	meshMap[head.meshName].SetNrOfVerts(head.nrOfVerts);
 
 	meshMap[head.meshName].SetTriIndicies(indexArr, head.indexCount);
-	meshMap[head.meshName].SetVerts(verts, head.nrOfVerts*8);
+	int temp = head.nrOfVerts * 8;
+	meshMap[head.meshName].SetVerts(verts, temp);//Here
 }
 
 void MayaBatchOutput::SetTransform(TransHeader head, double transform[10])
@@ -38,8 +39,15 @@ void MayaBatchOutput::SetTransform(TransHeader head, double transform[10])
 		double* arr = new double[10];
 		transformMap[head.name] = arr;
 		m_MasterHead.transformCount++;
+
+		std::string check(head.name);
+		if (check == "persp")
+		{
+			m_MasterHead.camChanged = true;
+		}
 	}
 
+	//No need to delete. Only replace the values it will be deleted at reset/destruction.
 	for (int i = 0; i < 10; i++)
 	{
 		transformMap[head.name][i] = transform[i];
@@ -49,6 +57,11 @@ void MayaBatchOutput::SetTransform(TransHeader head, double transform[10])
 void MayaBatchOutput::SetCamChanged(bool change)
 {
 	m_MasterHead.camChanged = change;
+}
+
+MasterHeader* MayaBatchOutput::GetMasterHeader()
+{
+	return &m_MasterHead;
 }
 
 void MayaBatchOutput::Reset()

@@ -21,10 +21,10 @@ public:
 	void SetNrOfVerts(int newNr);
 	void SetICount(int newCount);
 
-	int* GetIndicies();
-	float* GetVerts();
+	int* GetIndicies() const;
+	float* GetVerts() const;
 	double* GetTransform();
 
-	int GetNrOfVerts();
-	int GetIndexCount();
+	int GetNrOfVerts() const;
+	int GetIndexCount() const;
 };

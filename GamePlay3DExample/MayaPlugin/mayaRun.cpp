@@ -5,10 +5,11 @@
 #include <algorithm>
 #include <vector>
 #include <queue>
-#include <string>
+//#include <string>
 #include <map>
 #include "ComLib_reference.h"
-#include "../Structs.h"
+//#include "../Structs.h"
+#include "MayaBatchOutput.h"
 
 using namespace std;
 MCallbackIdArray callbackIdArray;
@@ -25,6 +26,7 @@ MString lastName = "0";
 // keep track of created meshes to maintain them
 queue<MObject> newMeshes;
 std::map<std::string, int> mapOfVertexArrays;
+MayaBatchOutput batch;
 
 void nodeTransformChanged(MNodeMessage::AttributeMessage msg, MPlug &plug, MPlug &otherPlug, void* x)
 {
@@ -111,10 +113,16 @@ void nodeTransformChanged(MNodeMessage::AttributeMessage msg, MPlug &plug, MPlug
 				cout << transform[i] << endl;
 			}
 			
-			int nr = 1;
+			/*int nr = 1;
 			producer.send(&nr, sizeof(int));
 			producer.send(name, len);
-			producer.send(transform, 10*sizeof(double));
+			producer.send(transform, 10*sizeof(double));*/
+			TransHeader head;
+			for (int i = 0; i < len; i++)
+			{
+				head.name[i] = name[i];
+			}
+			batch.SetTransform(head, transform);
 		}
 	}
 }
@@ -277,11 +285,12 @@ void nodeMeshAttributeChanged(MNodeMessage::AttributeMessage msg, MPlug &plug, M
 			// Sending the collected information.
 
 			/*MsgType type = meshType;*/
-			int nr = 0;
-			producer.send(&nr, sizeof(int));
-			producer.send(&meshHead, sizeof(MeshHeader));
-			producer.send(triIndicies, meshHead.indexCount * sizeof(int));
-			producer.send(verts, meshHead.nrOfVerts * 8 * sizeof(float));
+			//int nr = 0;
+			//producer.send(&nr, sizeof(int));
+			//producer.send(&meshHead, sizeof(MeshHeader));
+			//producer.send(triIndicies, meshHead.indexCount * sizeof(int));
+			//producer.send(verts, meshHead.nrOfVerts * 8 * sizeof(float));
+			batch.SetMesh(meshHead, triIndicies, verts);//And here
 
 			for (int i = 0; i < numFaceVertices; i++)
 			{
@@ -360,6 +369,41 @@ void nodeRemoved(MObject &node, void * clientData)
 void timerCallback(float elapsedTime, float lastTime, void *clientData)
 {
 	/*cout << "Time Elapsed: " + to_string(elapsedTime) << endl;*/
+	for (const auto& nr : batch.meshMap)
+	{
+		//MeshHeader could just be saved in batch later
+		MeshHeader meshHead;
+		for (int i = 0; i < nr.first.length(); i++)
+		{
+			meshHead.meshName[i] = nr.first.at(i);
+		}
+		meshHead.indexCount = nr.second.GetIndexCount();
+		meshHead.nrOfVerts = nr.second.GetNrOfVerts();
+		string s(meshHead.meshName);
+		cout << "MeshName: " << s << endl;
+		cout << "IndexCount: " << meshHead.indexCount << endl;
+		cout << "nrOfVerts: " << meshHead.nrOfVerts << endl;
+
+		for (int i = 0; i < meshHead.indexCount; i++)
+		{
+			cout << "index Nr:" << endl;
+			cout << nr.second.GetIndicies()[i] << endl;
+		}
+		for (int i = 0; i < meshHead.nrOfVerts * 8; i += 8)
+		{
+			cout << "Vert nr:" << i / 8 << endl;
+			cout << "Pos: " << nr.second.GetVerts()[i] << "," << nr.second.GetVerts()[i + 1] << "," << nr.second.GetVerts()[i + 2] << endl;
+			cout << "Norm: " << nr.second.GetVerts()[i + 3] << "," << nr.second.GetVerts()[i + 4] << "," << nr.second.GetVerts()[i + 5] << endl;
+			cout << "UV: " << nr.second.GetVerts()[i + 6] << "," << nr.second.GetVerts()[i + 7] << "," << nr.second.GetVerts()[i + 8] << endl;
+		}
+		/*MsgType type = meshType;*/
+		//int nr = 0;
+		//producer.send(&nr, sizeof(int));
+		//producer.send(&meshHead, sizeof(MeshHeader));
+		//producer.send(triIndicies, meshHead.indexCount * sizeof(int));
+		//producer.send(verts, meshHead.nrOfVerts * 8 * sizeof(float));
+	}
+	batch.Reset();
 }
 
 void nameChanged(MObject &node, const MString &prevName, void *clientData)
@@ -379,6 +423,7 @@ void nameChanged(MObject &node, const MString &prevName, void *clientData)
 	}
 }
 
+//DON'T FORGET Sending initialize info to the viewer should also happen here
 void addCallbacksToExistingNodes()
 {
 
