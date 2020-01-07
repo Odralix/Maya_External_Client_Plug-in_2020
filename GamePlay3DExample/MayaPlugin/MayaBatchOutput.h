@@ -17,6 +17,8 @@ public:
 	void SetTransform(TransHeader head, double transform[10]);
 	void SetCamChanged(bool change);
 
+	void RemoveObject(std::string name);
+
 	MasterHeader* GetMasterHeader();
 	std::unordered_map<std::string, Mesh> meshMap;
 	std::unordered_map <std::string, double*> transformMap;

@@ -59,6 +59,11 @@ void MayaBatchOutput::SetCamChanged(bool change)
 	m_MasterHead.camChanged = change;
 }
 
+void  MayaBatchOutput::RemoveObject(std::string name)
+{
+
+}
+
 MasterHeader* MayaBatchOutput::GetMasterHeader()
 {
 	return &m_MasterHead;

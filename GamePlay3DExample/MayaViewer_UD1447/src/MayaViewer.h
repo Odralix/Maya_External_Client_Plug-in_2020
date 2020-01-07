@@ -66,7 +66,7 @@ private:
 	Mesh * setupInputMesh(MeshHeader &mHead);
 	MeshHeader readHeader();
 	void msgDirector();
-	void applyTransformation(char * name, double * transform);
+	void applyTransformation(const char * name, double * transform);
 	Material* createMaterial();
 
 

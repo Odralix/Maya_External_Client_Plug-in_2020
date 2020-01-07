@@ -358,19 +358,41 @@ void MayaViewer::msgDirector()
 		for (int i = 0; i < head.meshCount; i++)
 		{
 			inMeshArr[i] = readHeader();
-			setupInputMesh(inMeshArr[i]);
+			Model *mesh = Model::create(setupInputMesh(inMeshArr[i]));
+
+			Material * mat;
+			Texture::Sampler* sampler;
+			char nodeName[42] = {};
+			//Move into seperate material function later.
+			mat = mesh->setMaterial("res/shaders/textured.vert", "res/shaders/textured.frag", "POINT_LIGHT_COUNT 1");
+			mat->setParameterAutoBinding("u_worldViewProjectionMatrix", "WORLD_VIEW_PROJECTION_MATRIX");
+			mat->setParameterAutoBinding("u_inverseTransposeWorldViewMatrix", "INVERSE_TRANSPOSE_WORLD_VIEW_MATRIX");
+			mat->getParameter("u_ambientColor")->setValue(Vector3(0.1f, 0.1f, 0.2f));
+			mat->getParameter("u_pointLightColor[0]")->setValue(_scene->findNode("light")->getLight()->getColor());
+			mat->getParameter("u_pointLightPosition[0]")->bindValue(_scene->findNode("light"), &Node::getTranslationWorld);
+			mat->getParameter("u_pointLightRangeInverse[0]")->bindValue(_scene->findNode("light")->getLight(), &Light::getRangeInverse);
+			sampler = mat->getParameter("u_diffuseTexture")->setValue("res/png/crate.png", true);
+			sampler->setFilterMode(Texture::LINEAR_MIPMAP_LINEAR, Texture::LINEAR);
+			mat->getStateBlock()->setCullFace(true);
+			mat->getStateBlock()->setDepthTest(true);
+			mat->getStateBlock()->setDepthWrite(true);
+
+			sprintf(nodeName, inMeshArr[i].meshName, i);
+			Node* node = _scene->addNode(nodeName);
+			node->setDrawable(mesh);
+			SAFE_RELEASE(mesh);
 		}
 	}
 
 	if (head.transformCount != 0)
 	{
-		char name[8] = "0";
 		size_t nameLength;
 		double transform[10];
 		size_t tLen = sizeof(transform);
 
 		for (int i = 0; i < head.transformCount; i++)
 		{
+			char name[42] = "0";
 			consumer.recv(name, nameLength);
 			consumer.recv((char*)transform, tLen);
 			applyTransformation(name, transform);
@@ -405,7 +427,7 @@ void MayaViewer::msgDirector()
 
 }
 
-void MayaViewer::applyTransformation(char * name, double * transform)
+void MayaViewer::applyTransformation(const char * name, double * transform)
 {
 	Node* node = _scene->findNode(name);
 

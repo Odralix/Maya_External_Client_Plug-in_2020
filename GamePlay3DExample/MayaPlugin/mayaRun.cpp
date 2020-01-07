@@ -53,11 +53,11 @@ void nodeTransformChanged(MNodeMessage::AttributeMessage msg, MPlug &plug, MPlug
 
 			MMatrix worldMat = tNodeDag.inclusiveMatrix();
 
-			cout << "Local Transform: " << endl;
-			cout << tMat << endl;
+			//cout << "Local Transform: " << endl;
+			//cout << tMat << endl;
 
-			cout << " Global Transform: " << endl;
-			cout << worldMat << endl;
+			//cout << " Global Transform: " << endl;
+			//cout << worldMat << endl;
 
 		/*	float transform[4][4] = { 0 };
 
@@ -108,10 +108,10 @@ void nodeTransformChanged(MNodeMessage::AttributeMessage msg, MPlug &plug, MPlug
 			int len = 0;
 			const char* name = nameFetch.name().asChar(len);
 			
-			for (int i = 0; i < 10; i++)
-			{
-				cout << transform[i] << endl;
-			}
+			//for (int i = 0; i < 10; i++)
+			//{
+			//	cout << transform[i] << endl;
+			//}
 			
 			/*int nr = 1;
 			producer.send(&nr, sizeof(int));

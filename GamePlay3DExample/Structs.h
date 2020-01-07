@@ -6,6 +6,7 @@ struct MasterHeader
 {
 	int meshCount;
 	int transformCount;
+	int removedCount;
 	//int matCount;
 	bool camChanged;
 };
