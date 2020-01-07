@@ -165,6 +165,15 @@ void nodeMeshAttributeChanged(MNodeMessage::AttributeMessage msg, MPlug &plug, M
 
 		MObject Mnode = plug.node();
 
+		/*for (int i = 0; i < dagSearch.parentCount(); i++)
+		{
+			MObject parHandle = dagSearch.parent(i);
+
+			MFnDagNode par(parHandle);
+
+			cout << par.name().asChar() << endl;
+		}*/
+
 		MFloatPointArray vertexArr;
 
 		inputMesh.getPoints(vertexArr);
@@ -180,18 +189,25 @@ void nodeMeshAttributeChanged(MNodeMessage::AttributeMessage msg, MPlug &plug, M
 		// Since we only check the length updating the map in the other check is currently irrelevant.
 		if (arrLen != vertexArr.length())
 		{
+			//Note, the name is technically the transform and not the mesh.
+			MFnDagNode dagSearch(Mnode);
+			MObject handle = dagSearch.parent(0);
+			MFnDagNode parent(handle);
+
 			//Replace old vertex array and print the new info out.
 			mapOfVertexArrays[meshName] = vertexArr.length();
-			cout << meshNode.name() << " Topology Changed! " << "New vertex locations: " << endl;
+			cout << parent.name().asChar() << " Topology Changed! " << "New vertex locations: " << endl;
 
 			//Getting the number of verts
 			MeshHeader meshHead;
+
+			meshHead.nrOfVerts = inputMesh.numFaceVertices(&status);
+
 			//Enter the name.
 			for (int i = 0; i < meshNode.name().length(); i++)
 			{
-				meshHead.meshName[i] = temp[i];
+				meshHead.meshName[i] = parent.name().asChar()[i];
 			}
-			meshHead.nrOfVerts = inputMesh.numFaceVertices(&status);
 
 			//Getting the Index count
 			MIntArray triCounts;
@@ -374,41 +390,66 @@ void nodeRemoved(MObject &node, void * clientData)
 void timerCallback(float elapsedTime, float lastTime, void *clientData)
 {
 	/*cout << "Time Elapsed: " + to_string(elapsedTime) << endl;*/
-	for (const auto& nr : batch.meshMap)
+	if (batch.GetMasterHeader()->camChanged)
 	{
-		//MeshHeader could just be saved in batch later
-		MeshHeader meshHead;
-		for (int i = 0; i < nr.first.length(); i++)
-		{
-			meshHead.meshName[i] = nr.first.at(i);
-		}
-		meshHead.indexCount = nr.second.GetIndexCount();
-		meshHead.nrOfVerts = nr.second.GetNrOfVerts();
-		string s(meshHead.meshName);
-		cout << "MeshName: " << s << endl;
-		cout << "IndexCount: " << meshHead.indexCount << endl;
-		cout << "nrOfVerts: " << meshHead.nrOfVerts << endl;
-
-		/*for (int i = 0; i < meshHead.indexCount; i++)
-		{
-			cout << "index Nr:" << endl;
-			cout << nr.second.GetIndicies()[i] << endl;
-		}
-		for (int i = 0; i < meshHead.nrOfVerts * 8; i += 8)
-		{
-			cout << "Vert nr:" << i / 8 << endl;
-			cout << "Pos: " << nr.second.GetVerts()[i] << "," << nr.second.GetVerts()[i + 1] << "," << nr.second.GetVerts()[i + 2] << endl;
-			cout << "Norm: " << nr.second.GetVerts()[i + 3] << "," << nr.second.GetVerts()[i + 4] << "," << nr.second.GetVerts()[i + 5] << endl;
-			cout << "UV: " << nr.second.GetVerts()[i + 6] << "," << nr.second.GetVerts()[i + 7] << "," << nr.second.GetVerts()[i + 8] << endl;
-		}*/
-		/*MsgType type = meshType;*/
-		//int nr = 0;
-		//producer.send(&nr, sizeof(int));
-		//producer.send(&meshHead, sizeof(MeshHeader));
-		//producer.send(triIndicies, meshHead.indexCount * sizeof(int));
-		//producer.send(verts, meshHead.nrOfVerts * 8 * sizeof(float));
+		cout << "CAM WAS CHANGED" << endl;
 	}
-	batch.Reset();
+
+	if ((batch.GetMasterHeader()->meshCount != 0) || (batch.GetMasterHeader()->transformCount != 0))
+	{
+		producer.send(batch.GetMasterHeader(), sizeof(MasterHeader));
+		//cout<< "Mesh Count: " << batch.GetMasterHeader()->meshCount << endl;
+		//cout << "Transform Count " << batch.GetMasterHeader()->transformCount << endl;
+
+		for (const auto& nr : batch.meshMap)
+		{
+			//MeshHeader could just be saved in batch later
+			MeshHeader meshHead;
+			for (int i = 0; i < nr.first.length(); i++)
+			{
+				meshHead.meshName[i] = nr.first.at(i);
+			}
+			meshHead.indexCount = nr.second.GetIndexCount();
+			meshHead.nrOfVerts = nr.second.GetNrOfVerts();
+			string s(meshHead.meshName);
+			cout << "MeshName: " << s << endl;
+			cout << "IndexCount: " << meshHead.indexCount << endl;
+			cout << "nrOfVerts: " << meshHead.nrOfVerts << endl;
+
+			/*for (int i = 0; i < meshHead.indexCount; i++)
+			{
+				cout << "index Nr:" << endl;
+				cout << nr.second.GetIndicies()[i] << endl;
+			}
+			for (int i = 0; i < meshHead.nrOfVerts * 8; i += 8)
+			{
+				cout << "Vert nr:" << i / 8 << endl;
+				cout << "Pos: " << nr.second.GetVerts()[i] << "," << nr.second.GetVerts()[i + 1] << "," << nr.second.GetVerts()[i + 2] << endl;
+				cout << "Norm: " << nr.second.GetVerts()[i + 3] << "," << nr.second.GetVerts()[i + 4] << "," << nr.second.GetVerts()[i + 5] << endl;
+				cout << "UV: " << nr.second.GetVerts()[i + 6] << "," << nr.second.GetVerts()[i + 7] << "," << nr.second.GetVerts()[i + 8] << endl;
+			}*/
+			/*MsgType type = meshType;*/
+			//int nr = 0;
+			//producer.send(&nr, sizeof(int));
+			producer.send(&meshHead, sizeof(MeshHeader));
+			producer.send(nr.second.GetIndicies(), meshHead.indexCount * sizeof(int));
+			producer.send(nr.second.GetVerts(), meshHead.nrOfVerts * 8 * sizeof(float));
+		}
+
+		for (const auto& it2 : batch.transformMap)
+		{
+			cout << it2.first << endl;
+
+	/*		cout << "Translation: " << it2.second[0] << "," << it2.second[1] << "," << it2.second[2] << endl;
+			cout << "scale: " << it2.second[3] << "," << it2.second[4] << "," << it2.second[5] << endl;
+			cout << "Rotation: " << it2.second[6] << "," << it2.second[7] << "," << it2.second[8] << endl;*/
+			/*int nr = 1;
+			producer.send(&nr, sizeof(int));*/
+			producer.send(it2.first.c_str(), it2.first.length());
+			producer.send(it2.second, 10*sizeof(double));
+		}
+		batch.Reset();
+	}
 }
 
 void nameChanged(MObject &node, const MString &prevName, void *clientData)
@@ -490,7 +531,7 @@ EXPORT MStatus initializePlugin(MObject obj) {
 	// register callbacks here for
 	callbackIdArray.append(MDGMessage::addNodeAddedCallback(nodeAdded, "dependNode", NULL, &status));
 	callbackIdArray.append(MDGMessage::addNodeRemovedCallback(nodeRemoved, "dependNode", NULL, &status));
-	callbackIdArray.append(MTimerMessage::addTimerCallback(5, timerCallback, NULL, &status));
+	callbackIdArray.append(MTimerMessage::addTimerCallback(0.02f, timerCallback, NULL, &status));
 	callbackIdArray.append(MNodeMessage::addNameChangedCallback(MObject::kNullObj, nameChanged, NULL, &status));
 
 	addCallbacksToExistingNodes();

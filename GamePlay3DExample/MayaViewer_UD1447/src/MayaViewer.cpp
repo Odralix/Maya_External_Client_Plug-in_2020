@@ -40,18 +40,24 @@ void MayaViewer::initialize()
 
 	//Mesh* mesh1 = createCubeMesh(1.0);
 
-	int type = 1;
-	size_t hSize = sizeof(int);
-	consumer.recv((char*)&type, hSize);
+	//int type = 1;
+	//size_t hSize = sizeof(int);
+	//consumer.recv((char*)&type, hSize);
+
+	MasterHeader head1;
+	size_t Mlen;
+	consumer.recv((char*)&head1, Mlen);
 
 	MeshHeader head = readHeader();
 	Mesh* mesh1 = setupInputMesh(head);
+
+	//std::string name(head.meshName);
 
 	Model* models[gModelCount];
 	Material* mats[gModelCount];
 	Texture::Sampler* samplers[gModelCount];
 
-	char nodeName[10] = {};
+	char nodeName[42] = {};
 	for (int i = 0; i < gModelCount; i++)
 	{
 		models[i] = Model::create(mesh1);
@@ -67,7 +73,7 @@ void MayaViewer::initialize()
 		mats[i]->getStateBlock()->setCullFace(true);
 		mats[i]->getStateBlock()->setDepthTest(true);
 		mats[i]->getStateBlock()->setDepthWrite(true);
-		sprintf(nodeName, "cube%d", i);
+		sprintf(nodeName, head.meshName, i);
 		Node* node = _scene->addNode(nodeName);
 		node->setDrawable(models[i]);
 		SAFE_RELEASE(models[i]);
@@ -102,24 +108,24 @@ void MayaViewer::update(float elapsedTime)
 	//}	
 
 	Node* camnode = _scene->getActiveCamera()->getNode();
-	if (gKeys[Keyboard::KEY_W])
-		camnode->translateForward(0.5);
-	if (gKeys[Keyboard::KEY_S])
-		camnode->translateForward(-0.5);
-	if (gKeys[Keyboard::KEY_A])
-		camnode->translateLeft(0.5);
-	if (gKeys[Keyboard::KEY_D])
-		camnode->translateLeft(-0.5);
+	//if (gKeys[Keyboard::KEY_W])
+	//	camnode->translateForward(0.5);
+	//if (gKeys[Keyboard::KEY_S])
+	//	camnode->translateForward(-0.5);
+	//if (gKeys[Keyboard::KEY_A])
+	//	camnode->translateLeft(0.5);
+	//if (gKeys[Keyboard::KEY_D])
+	//	camnode->translateLeft(-0.5);
 
 	//MY STUFF__________________________________________________________
 	//char stuff[1024*3] = { 0 };
 	/*consumer.recv(static_cast<char*>(stuff), size);*/
 	msgDirector();
 
-	if (gMousePressed) {
-		camnode->rotate(camnode->getRightVectorWorld(), MATH_DEG_TO_RAD(gDeltaY / 10.0));
-		camnode->rotate(camnode->getUpVectorWorld(), MATH_DEG_TO_RAD(gDeltaX / 5.0));
-	}
+	//if (gMousePressed) {
+	//	camnode->rotate(camnode->getRightVectorWorld(), MATH_DEG_TO_RAD(gDeltaY / 10.0));
+	//	camnode->rotate(camnode->getUpVectorWorld(), MATH_DEG_TO_RAD(gDeltaX / 5.0));
+	//}
 }
 
 void MayaViewer::render(float elapsedTime)
@@ -339,31 +345,36 @@ MeshHeader MayaViewer::readHeader()
 
 void MayaViewer::msgDirector()
 {
-	MasterHeader *head;
+	MasterHeader head;
 	size_t Mlen;
-	consumer.recv((char*)head, Mlen);
+	consumer.recv((char*)&head, Mlen);
 
-	if (head->meshCount != 0)
+	//If unnecesary since mayaRun already checks
+	if (head.meshCount != 0)
 	{
 		delete[] inMeshArr;
-		inMeshArr = new MeshHeader[head->meshCount];
+		inMeshArr = new MeshHeader[head.meshCount];
 
-		for (int i = 0; i < head->meshCount; i++)
+		for (int i = 0; i < head.meshCount; i++)
 		{
+			inMeshArr[i] = readHeader();
 			setupInputMesh(inMeshArr[i]);
 		}
 	}
 
-	if (head->transformCount != 0)
+	if (head.transformCount != 0)
 	{
 		char name[8] = "0";
 		size_t nameLength;
 		double transform[10];
 		size_t tLen = sizeof(transform);
 
-		consumer.recv(name, nameLength);
-		consumer.recv((char*)transform, tLen);
-		applyTransformation(name, transform);
+		for (int i = 0; i < head.transformCount; i++)
+		{
+			consumer.recv(name, nameLength);
+			consumer.recv((char*)transform, tLen);
+			applyTransformation(name, transform);
+		}
 	}
 
 
@@ -396,7 +407,7 @@ void MayaViewer::msgDirector()
 
 void MayaViewer::applyTransformation(char * name, double * transform)
 {
-	Node* node = _scene->findNode("cube0");
+	Node* node = _scene->findNode(name);
 
 	if (node)
 	{

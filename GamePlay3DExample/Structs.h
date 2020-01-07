@@ -26,12 +26,12 @@ struct MeshHeader
 
 struct TransHeader
 {
-	char name[NAME_LEN];
+	char name[NAME_LEN] = { '\0' };
 	//double transform[10];
 };
 
 struct NewName
 {
-	char oldName[NAME_LEN];
-	char newName[NAME_LEN];
+	char oldName[NAME_LEN] = { '\0' };
+	char newName[NAME_LEN] = { '\0' };
 };
