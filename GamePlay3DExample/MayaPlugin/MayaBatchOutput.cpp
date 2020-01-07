@@ -5,6 +5,7 @@ MayaBatchOutput::MayaBatchOutput()
 	m_MasterHead.camChanged = false;
 	m_MasterHead.meshCount = 0;
 	m_MasterHead.transformCount = 0;
+	//Buffer size. Guessing user will rarely delete more than 10 objects at once.
 }
 
 MayaBatchOutput::~MayaBatchOutput()
@@ -61,7 +62,8 @@ void MayaBatchOutput::SetCamChanged(bool change)
 
 void  MayaBatchOutput::RemoveObject(std::string name)
 {
-
+	removeNames.push_back(name);
+	m_MasterHead.removedCount++;
 }
 
 MasterHeader* MayaBatchOutput::GetMasterHeader()
@@ -74,6 +76,8 @@ void MayaBatchOutput::Reset()
 	m_MasterHead.camChanged = false;
 	m_MasterHead.meshCount = 0;
 	m_MasterHead.transformCount = 0;
+	m_MasterHead.removedCount = 0;
+	removeNames.clear();
 	for (const auto& nr : transformMap)
 	{
 		delete[] nr.second;

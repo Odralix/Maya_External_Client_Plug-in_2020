@@ -348,7 +348,7 @@ void MayaViewer::msgDirector()
 	MasterHeader head;
 	size_t Mlen;
 	consumer.recv((char*)&head, Mlen);
-	//Should be moved to last in case transform calls make it in.
+
 	if (head.removedCount != 0)
 	{
 		char name[42] = {};

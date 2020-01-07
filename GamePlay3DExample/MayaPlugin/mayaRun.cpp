@@ -3,7 +3,6 @@
 #include <maya/MTimer.h>
 #include <iostream>
 #include <algorithm>
-#include <vector>
 #include <queue>
 //#include <string>
 #include <map>
@@ -384,6 +383,13 @@ void nodeRemoved(MObject &node, void * clientData)
 	MFnDependencyNode dependNode(node);
 	name = dependNode.name();
 
+	if (node.hasFn(MFn::kTransform))
+	{
+		batch.RemoveObject(name.asChar());
+	}
+
+	//If this is not erased, recreating the object doesn't proc the right processes.
+	mapOfVertexArrays.erase(name.asChar());
 	cout << "Removed node: " + name << endl;
 }
 
@@ -395,11 +401,17 @@ void timerCallback(float elapsedTime, float lastTime, void *clientData)
 		cout << "CAM WAS CHANGED" << endl;
 	}
 
-	if ((batch.GetMasterHeader()->meshCount != 0) || (batch.GetMasterHeader()->transformCount != 0))
+	if ((batch.GetMasterHeader()->meshCount != 0) || (batch.GetMasterHeader()->transformCount != 0) || batch.GetMasterHeader()->removedCount != 0)
 	{
 		producer.send(batch.GetMasterHeader(), sizeof(MasterHeader));
 		//cout<< "Mesh Count: " << batch.GetMasterHeader()->meshCount << endl;
 		//cout << "Transform Count " << batch.GetMasterHeader()->transformCount << endl;
+
+		for (int i = 0; i < batch.removeNames.size(); i++)
+		{
+			cout << "SENDING " << batch.removeNames[i].c_str() << endl;
+			producer.send(batch.removeNames[i].c_str(), batch.removeNames[i].length());
+		}
 
 		for (const auto& nr : batch.meshMap)
 		{

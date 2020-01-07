@@ -3,12 +3,13 @@
 #include "Mesh.h"
 #include <unordered_map>
 #include <string>
+#include <vector>
 
 class MayaBatchOutput
 {
 private:
 	MasterHeader m_MasterHead;
-	
+
 public:
 	MayaBatchOutput();
 	~MayaBatchOutput();
@@ -22,6 +23,7 @@ public:
 	MasterHeader* GetMasterHeader();
 	std::unordered_map<std::string, Mesh> meshMap;
 	std::unordered_map <std::string, double*> transformMap;
+	std::vector<std::string> removeNames;
 
 
 	void Reset();
