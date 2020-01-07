@@ -186,6 +186,11 @@ void nodeMeshAttributeChanged(MNodeMessage::AttributeMessage msg, MPlug &plug, M
 
 			//Getting the number of verts
 			MeshHeader meshHead;
+			//Enter the name.
+			for (int i = 0; i < meshNode.name().length(); i++)
+			{
+				meshHead.meshName[i] = temp[i];
+			}
 			meshHead.nrOfVerts = inputMesh.numFaceVertices(&status);
 
 			//Getting the Index count
@@ -384,7 +389,7 @@ void timerCallback(float elapsedTime, float lastTime, void *clientData)
 		cout << "IndexCount: " << meshHead.indexCount << endl;
 		cout << "nrOfVerts: " << meshHead.nrOfVerts << endl;
 
-		for (int i = 0; i < meshHead.indexCount; i++)
+		/*for (int i = 0; i < meshHead.indexCount; i++)
 		{
 			cout << "index Nr:" << endl;
 			cout << nr.second.GetIndicies()[i] << endl;
@@ -395,7 +400,7 @@ void timerCallback(float elapsedTime, float lastTime, void *clientData)
 			cout << "Pos: " << nr.second.GetVerts()[i] << "," << nr.second.GetVerts()[i + 1] << "," << nr.second.GetVerts()[i + 2] << endl;
 			cout << "Norm: " << nr.second.GetVerts()[i + 3] << "," << nr.second.GetVerts()[i + 4] << "," << nr.second.GetVerts()[i + 5] << endl;
 			cout << "UV: " << nr.second.GetVerts()[i + 6] << "," << nr.second.GetVerts()[i + 7] << "," << nr.second.GetVerts()[i + 8] << endl;
-		}
+		}*/
 		/*MsgType type = meshType;*/
 		//int nr = 0;
 		//producer.send(&nr, sizeof(int));

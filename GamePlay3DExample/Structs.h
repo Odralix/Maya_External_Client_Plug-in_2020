@@ -21,7 +21,7 @@ struct MeshHeader
 {
 	int nrOfVerts;
 	int indexCount;
-	char meshName[NAME_LEN];
+	char meshName[NAME_LEN] = { '\0' };
 };
 
 struct TransHeader
