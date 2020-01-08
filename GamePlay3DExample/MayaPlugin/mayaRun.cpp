@@ -126,6 +126,165 @@ void nodeTransformChanged(MNodeMessage::AttributeMessage msg, MPlug &plug, MPlug
 	}
 }
 
+//For use only on MObjects with a connected MFn::kMesh.
+void SendMesh(MObject Mnode)
+{
+	if (Mnode.hasFn(MFn::kMesh))
+	{
+
+
+		MFnDependencyNode meshNode(Mnode);
+		MFnMesh inputMesh(Mnode);
+
+		MFloatPointArray vertexArr;
+		inputMesh.getPoints(vertexArr);
+
+		const char* temp = meshNode.name().asChar();
+		string meshName(temp);
+
+		//Note, the name is technically the transform and not the mesh.
+		MFnDagNode dagSearch(Mnode);
+		MObject handle = dagSearch.parent(0);
+		MFnDagNode parent(handle);
+
+		//Replace old vertex array and print the new info out.
+		mapOfVertexArrays[meshName] = vertexArr.length();
+		cout << parent.name().asChar() << " Topology Changed! " << "New vertex locations: " << endl;
+
+		//Getting the number of verts
+		MeshHeader meshHead;
+
+		meshHead.nrOfVerts = inputMesh.numFaceVertices(&status);
+
+		//Enter the name.
+		for (int i = 0; i < meshNode.name().length(); i++)
+		{
+			meshHead.meshName[i] = parent.name().asChar()[i];
+		}
+
+		//Getting the Index count
+		MIntArray triCounts;
+		MIntArray triVerts;
+
+		inputMesh.getTriangleOffsets(triCounts, triVerts);
+
+		meshHead.indexCount = triVerts.length();
+
+		//Put indicies into an int-array
+		int * triIndicies = new int[meshHead.indexCount];
+		triVerts.get(triIndicies);
+
+		for (int i = 0; i < meshHead.indexCount; i++)
+		{
+			cout << triIndicies[i] << " ";
+		}
+		cout << endl;
+
+		int numFaceVertices = meshHead.nrOfVerts;
+
+		float ** posArr = new float*[numFaceVertices];
+		for (int i = 0; i < numFaceVertices; i++)
+		{
+			posArr[i] = new float[4];
+		}
+
+		float * normArr = new float[numFaceVertices * 3];
+		float * UVArr = new float[numFaceVertices * 2];
+		int nCount = 0;
+		int uvCount = 0;
+
+		MVector normals;
+		int i = 0;
+		MItMeshFaceVertex iterator(Mnode, &status);
+		while (!iterator.isDone())
+		{
+			iterator.position(MSpace::kWorld, &status).get(posArr[i]);
+			iterator.getNormal(normals, MSpace::kObject);
+			float2 temp;
+			iterator.getUV(temp);
+
+			double get[3];
+			normals.get(get);
+			for (int j = 0; j < 3; j++)
+			{
+				/*normArr[i*3+j];*/
+				normArr[nCount] = get[j];
+				/*cout << normArr[nCount] << " ";*/
+				nCount++;
+			}
+			// Note: These are just initial UVs. There should technically be a callback for when the UVs change.
+			for (int j = 0; j < 2; j++)
+			{
+				UVArr[uvCount] = temp[j];
+				/*	cout << UVArr[uvCount] << " ";*/
+				uvCount++;
+			}
+
+			i++;
+			iterator.next();
+		}
+
+		//3+3+2 = 8 values per vert.
+		float * verts = new float[numFaceVertices * 8];
+		int count = 0;
+		int count2 = 0;
+		int count3 = 0;
+		int count4 = 0;
+
+		cout << numFaceVertices << endl;
+
+		for (int i = 0; i < numFaceVertices; i++)
+		{
+			for (int j = 0; j < 3; j++)
+			{
+				verts[count] = posArr[i][j];
+				count++;
+				count4++;
+			}
+
+			for (int j = 0; j < 3; j++)
+			{
+				verts[count] = normArr[count2];
+				count2++;
+				count++;
+			}
+
+			for (int j = 0; j < 2; j++)
+			{
+				verts[count] = UVArr[count3];
+				count3++;
+				count++;
+			}
+		}
+		// Sending the collected information.
+
+		/*MsgType type = meshType;*/
+		//int nr = 0;
+		//producer.send(&nr, sizeof(int));
+		//producer.send(&meshHead, sizeof(MeshHeader));
+		//producer.send(triIndicies, meshHead.indexCount * sizeof(int));
+		//producer.send(verts, meshHead.nrOfVerts * 8 * sizeof(float));
+		batch.SetMesh(meshHead, triIndicies, verts);//And here
+
+		for (int i = 0; i < numFaceVertices; i++)
+		{
+			delete[] posArr[i];
+		}
+		delete[] posArr;
+		delete[] UVArr;
+		delete[] normArr;
+		delete[] verts;
+	}
+	else
+	{
+	cout << "**********************************************************************************" << endl;
+	cout << "*********************** CRASH SAFETY NET WARNING!! *******************************" << endl;
+	cout << " ATTEMPTED TO CALL FUNCTION 'SetMesh' ON A MObject WITHOUT 'MFn::kMesh'." << endl;
+	cout << "************************* FUNCTION CALL IGNORED **********************************" << endl;
+	cout << "**********************************************************************************" << endl;
+	}
+}
+
 void nodeMeshAttributeChanged(MNodeMessage::AttributeMessage msg, MPlug &plug, MPlug &otherPlug, void* x)
 {
 	/* cout << plug.name() << ": " << plug.partialName() << endl;*/
@@ -188,138 +347,7 @@ void nodeMeshAttributeChanged(MNodeMessage::AttributeMessage msg, MPlug &plug, M
 		// Since we only check the length updating the map in the other check is currently irrelevant.
 		if (arrLen != vertexArr.length())
 		{
-			//Note, the name is technically the transform and not the mesh.
-			MFnDagNode dagSearch(Mnode);
-			MObject handle = dagSearch.parent(0);
-			MFnDagNode parent(handle);
-
-			//Replace old vertex array and print the new info out.
-			mapOfVertexArrays[meshName] = vertexArr.length();
-			cout << parent.name().asChar() << " Topology Changed! " << "New vertex locations: " << endl;
-
-			//Getting the number of verts
-			MeshHeader meshHead;
-
-			meshHead.nrOfVerts = inputMesh.numFaceVertices(&status);
-
-			//Enter the name.
-			for (int i = 0; i < meshNode.name().length(); i++)
-			{
-				meshHead.meshName[i] = parent.name().asChar()[i];
-			}
-
-			//Getting the Index count
-			MIntArray triCounts;
-			MIntArray triVerts;
-
-			inputMesh.getTriangleOffsets(triCounts, triVerts);
-
-			meshHead.indexCount = triVerts.length();
-
-			//Put indicies into an int-array
-			int * triIndicies = new int[meshHead.indexCount];
-			triVerts.get(triIndicies);
-
-			for (int i = 0; i < meshHead.indexCount; i++)
-			{
-				cout << triIndicies[i] << " ";
-			}
-			cout << endl;
-
-			int numFaceVertices = meshHead.nrOfVerts;
-
-			float ** posArr = new float*[numFaceVertices];
-			for (int i = 0; i < numFaceVertices; i++)
-			{
-				posArr[i] = new float[4];
-			}
-
-			float * normArr = new float[numFaceVertices*3];
-			float * UVArr = new float[numFaceVertices * 2];
-			int nCount = 0;
-			int uvCount = 0;
-
-			MVector normals;
-			int i = 0;
-			MItMeshFaceVertex iterator(Mnode, &status);
-			while (!iterator.isDone())
-			{
-				iterator.position(MSpace::kWorld, &status).get(posArr[i]);
-				iterator.getNormal(normals, MSpace::kObject);
-				float2 temp;
-				iterator.getUV(temp);
-
-				double get[3];
-				normals.get(get);
-				for (int j = 0; j < 3; j++)
-				{
-					/*normArr[i*3+j];*/
-					normArr[nCount] = get[j];
-					/*cout << normArr[nCount] << " ";*/
-					nCount++;
-				}
-				// Note: These are just initial UVs. There should technically be a callback for when the UVs change.
-				for (int j = 0; j < 2; j++)
-				{
-					UVArr[uvCount] = temp[j];
-				/*	cout << UVArr[uvCount] << " ";*/
-					uvCount++;
-				}
-
-				i++;
-				iterator.next();
-			}
-
-			//3+3+2 = 8 values per vert.
-			float * verts = new float[numFaceVertices * 8];
-			int count = 0;
-			int count2 = 0;
-			int count3 = 0;
-			int count4 = 0;
-
-			cout << numFaceVertices << endl;
-
-			for (int i = 0; i < numFaceVertices; i++)
-			{
-				for (int j = 0; j < 3; j++)
-				{
-					verts[count] = posArr[i][j];
-					count++;
-					count4++;
-				}
-
-				for (int j = 0; j < 3; j++)
-				{
-					verts[count] = normArr[count2];
-					count2++;
-					count++;
-				}
-
-				for (int j = 0; j < 2; j++)
-				{
-					verts[count] = UVArr[count3];
-					count3++;
-					count++;
-				}
-			}
-			// Sending the collected information.
-
-			/*MsgType type = meshType;*/
-			//int nr = 0;
-			//producer.send(&nr, sizeof(int));
-			//producer.send(&meshHead, sizeof(MeshHeader));
-			//producer.send(triIndicies, meshHead.indexCount * sizeof(int));
-			//producer.send(verts, meshHead.nrOfVerts * 8 * sizeof(float));
-			batch.SetMesh(meshHead, triIndicies, verts);//And here
-
-			for (int i = 0; i < numFaceVertices; i++)
-			{
-				delete[] posArr[i];
-			}
-			delete[] posArr;
-			delete[] UVArr;
-			delete[] normArr;
-			delete[] verts;
+			SendMesh(Mnode);
 		}
 	}
 }
@@ -484,8 +512,9 @@ void nameChanged(MObject &node, const MString &prevName, void *clientData)
 //DON'T FORGET Sending initialize info to the viewer should also happen here
 void addCallbacksToExistingNodes()
 {
-
+	//Iterator for all dependency nodes that are meshes.
 	MItDependencyNodes iterator(MFn::kMesh);
+	//Iterator for all dependency nodes that are transforms.
 	MItDependencyNodes iterator2(MFn::kTransform);
 
 	while (!iterator.isDone())
@@ -502,6 +531,8 @@ void addCallbacksToExistingNodes()
 		string meshName(temp);
 		// Pairing the map of the meshName and amount of vertices.
 		mapOfVertexArrays.insert(std::make_pair(meshName, vertexArr.length()));
+
+		MObject Mnode = iterator.thisNode();
 
 		callbackIdArray.append(MNodeMessage::addAttributeChangedCallback(iterator.thisNode(), nodeMeshAttributeChanged, NULL, &status));
 

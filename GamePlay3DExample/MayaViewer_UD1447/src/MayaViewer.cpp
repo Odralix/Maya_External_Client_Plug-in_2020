@@ -358,6 +358,7 @@ void MayaViewer::msgDirector()
 			char name[42] = {};
 
 			consumer.recv(name, nLen);
+			//Without this if the program could crash for attempting to find non-existent nodes.
 			if (_scene->findNode(name))
 			{
 				_scene->removeNode(_scene->findNode(name));
