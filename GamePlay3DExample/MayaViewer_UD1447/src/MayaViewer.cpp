@@ -351,11 +351,22 @@ void MayaViewer::msgDirector()
 	//Should be moved to last in case transform calls make it in.
 	if (head.removedCount != 0)
 	{
-		char name[42] = {};
 		size_t nLen;
 
-		consumer.recv(name, nLen);
-		_scene->removeNode(_scene->findNode(name));
+		for (int i = 0; i < head.removedCount; i++)
+		{
+			char name[42] = {};
+
+			consumer.recv(name, nLen);
+			if (_scene->findNode(name))
+			{
+				_scene->removeNode(_scene->findNode(name));
+			}
+			else
+			{
+				std::cout << name << " COULD NOT BE DELETED AS IT WASN'T FOUND";
+			}
+		}
 	}
 
 	//If unnecesary since mayaRun already checks

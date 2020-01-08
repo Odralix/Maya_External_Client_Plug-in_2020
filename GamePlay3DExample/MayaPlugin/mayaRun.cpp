@@ -404,8 +404,8 @@ void timerCallback(float elapsedTime, float lastTime, void *clientData)
 	if ((batch.GetMasterHeader()->meshCount != 0) || (batch.GetMasterHeader()->transformCount != 0) || batch.GetMasterHeader()->removedCount != 0)
 	{
 		producer.send(batch.GetMasterHeader(), sizeof(MasterHeader));
-		//cout<< "Mesh Count: " << batch.GetMasterHeader()->meshCount << endl;
-		//cout << "Transform Count " << batch.GetMasterHeader()->transformCount << endl;
+		cout<< "Mesh Count: " << batch.GetMasterHeader()->meshCount << endl;
+		cout << "Transform Count " << batch.GetMasterHeader()->transformCount << endl;
 
 		for (int i = 0; i < batch.removeNames.size(); i++)
 		{
