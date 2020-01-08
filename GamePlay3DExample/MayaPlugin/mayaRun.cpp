@@ -27,101 +27,75 @@ queue<MObject> newMeshes;
 std::map<std::string, int> mapOfVertexArrays;
 MayaBatchOutput batch;
 
+void SendTransform(MObject transformNode)
+{
+	MFnDependencyNode nameFetch(transformNode);
+
+	cout << nameFetch.name() << " Transform changed!" << endl;
+
+	//Local transform
+	MFnTransform getTransform(transformNode);
+
+	MMatrix tMat = getTransform.transformation().asMatrix();
+
+	//Global Transform:
+	MFnDagNode path(transformNode);
+	MDagPath tNodeDag;
+
+	path.getPath(tNodeDag);
+
+	MMatrix worldMat = tNodeDag.inclusiveMatrix();
+
+	MFnTransform parser;
+	const MTransformationMatrix aMat(worldMat);
+
+	MVector trans = aMat.getTranslation(MSpace::kWorld, &status);
+	double transDouble[3];
+	trans.get(transDouble);
+
+	double scaleDouble[3];
+	aMat.getScale(scaleDouble, MSpace::kWorld);
+
+	double quatDouble[4];
+	aMat.getRotationQuaternion(quatDouble[0], quatDouble[1], quatDouble[2], quatDouble[3]);
+
+	double transform[10];
+
+	for (int i = 0; i < 3; i++)
+	{
+		transform[i] = transDouble[i];
+		transform[i + 3] = scaleDouble[i];
+	}
+
+	for (int i = 6; i < 10; i++)
+	{
+		transform[i] = quatDouble[i - 6];
+	}
+
+	int len = 0;
+	const char* name = nameFetch.name().asChar(len);
+
+	TransHeader head;
+	for (int i = 0; i < len; i++)
+	{
+		head.name[i] = name[i];
+	}
+	batch.SetTransform(head, transform);
+}
+
 void nodeTransformChanged(MNodeMessage::AttributeMessage msg, MPlug &plug, MPlug &otherPlug, void* x)
 {
+	MFnDependencyNode nameFetch(plug.node());
+
+	cout << "TRANSFORM CALLBACK FOR " << nameFetch.name() << endl;
+
 	if (msg & MNodeMessage::kAttributeSet)
 	{
 		MObject transformNode = plug.node();
 
 		if (transformNode.hasFn(MFn::kTransform))
 		{
-			MFnDependencyNode nameFetch(plug.node());
-
-			cout << nameFetch.name() << " Transform changed!" << endl;
-
-			//Local transform
-			MFnTransform getTransform(transformNode);
-
-			MMatrix tMat = getTransform.transformation().asMatrix();
-
-			//Global Transform:
-			MFnDagNode path(transformNode);
-			MDagPath tNodeDag;
-
-			path.getPath(tNodeDag);
-
-			MMatrix worldMat = tNodeDag.inclusiveMatrix();
-
-			//cout << "Local Transform: " << endl;
-			//cout << tMat << endl;
-
-			//cout << " Global Transform: " << endl;
-			//cout << worldMat << endl;
-
-		/*	float transform[4][4] = { 0 };
-
-			worldMat.get(transform);*/
-
-			MFnTransform parser;
-			const MTransformationMatrix aMat(worldMat);
-		/*	parser.set(aMat);
-
-			cout << worldMat << endl;
-			cout << parser.transformation(&status).asMatrix() << endl;
-			cout << aMat.asMatrix() << endl;
-
-			MVector translation = parser.getTranslation(MSpace::kWorld);
-			double transDouble[3];
-			translation.get(transDouble);
-
-			double scaleDouble[3];
-			parser.getScale(scaleDouble);
-
-			double quatDouble[4];
-			parser.getRotationQuaternion(quatDouble[0], quatDouble[1], quatDouble[2], quatDouble[3], MSpace::kWorld);
-			*/
-
-			MVector trans = aMat.getTranslation(MSpace::kWorld, &status);
-			double transDouble[3];
-			trans.get(transDouble);
-
-			double scaleDouble[3];
-			aMat.getScale(scaleDouble, MSpace::kWorld);
-
-			double quatDouble[4];
-			aMat.getRotationQuaternion(quatDouble[0], quatDouble[1], quatDouble[2], quatDouble[3]);
-
-			double transform[10];
-
-			for (int i = 0; i < 3; i++)
-			{
-				transform[i] = transDouble[i];
-				transform[i + 3] = scaleDouble[i];
-			}
-
-			for (int i = 6; i < 10; i++)
-			{
-				transform[i] = quatDouble[i-6];
-			}
-
-			int len = 0;
-			const char* name = nameFetch.name().asChar(len);
-			
-			//for (int i = 0; i < 10; i++)
-			//{
-			//	cout << transform[i] << endl;
-			//}
-			
-			/*int nr = 1;
-			producer.send(&nr, sizeof(int));
-			producer.send(name, len);
-			producer.send(transform, 10*sizeof(double));*/
-			TransHeader head;
-			for (int i = 0; i < len; i++)
-			{
-				head.name[i] = name[i];
-			}
-			batch.SetTransform(head, transform);
+			SendTransform(transformNode);
 		}
 	}
 }
@@ -533,6 +507,8 @@ void addCallbacksToExistingNodes()
 		mapOfVertexArrays.insert(std::make_pair(meshName, vertexArr.length()));
 
 		MObject Mnode = iterator.thisNode();
+		//Batching already existing meshes for the viewer.
+		SendMesh(Mnode);
 
 		callbackIdArray.append(MNodeMessage::addAttributeChangedCallback(iterator.thisNode(), nodeMeshAttributeChanged, NULL, &status));
 
@@ -541,6 +517,7 @@ void addCallbacksToExistingNodes()
 
 	while (!iterator2.isDone())
 	{
+		SendTransform(iterator2.thisNode());
 		callbackIdArray.append(MNodeMessage::addAttributeChangedCallback(iterator2.thisNode(), nodeTransformChanged, NULL, &status));
 		iterator2.next();
 	}

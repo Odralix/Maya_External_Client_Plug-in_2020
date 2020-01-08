@@ -24,7 +24,7 @@ void MayaViewer::initialize()
 	_scene = Scene::create();
 
 	Camera* cam = Camera::createPerspective(45.0f, getAspectRatio(), 1.0, 100.0f);
-	Node* cameraNode = _scene->addNode("camera");
+	Node* cameraNode = _scene->addNode("persp");
 	cameraNode->setCamera(cam);
 	_scene->setActiveCamera(cam);
 	SAFE_RELEASE(cam);
@@ -38,46 +38,42 @@ void MayaViewer::initialize()
 	SAFE_RELEASE(light);
 	lightNode->translate(Vector3(0, 1, 5));
 
-	//Mesh* mesh1 = createCubeMesh(1.0);
+	msgDirector();
 
-	//int type = 1;
-	//size_t hSize = sizeof(int);
-	//consumer.recv((char*)&type, hSize);
+	//MasterHeader head1;
+	//size_t Mlen;
+	//consumer.recv((char*)&head1, Mlen);
 
-	MasterHeader head1;
-	size_t Mlen;
-	consumer.recv((char*)&head1, Mlen);
+	//MeshHeader head = readHeader();
+	//Mesh* mesh1 = setupInputMesh(head);
 
-	MeshHeader head = readHeader();
-	Mesh* mesh1 = setupInputMesh(head);
+	////std::string name(head.meshName);
 
-	//std::string name(head.meshName);
+	//Model* models[gModelCount];
+	//Material* mats[gModelCount];
+	//Texture::Sampler* samplers[gModelCount];
 
-	Model* models[gModelCount];
-	Material* mats[gModelCount];
-	Texture::Sampler* samplers[gModelCount];
-
-	char nodeName[42] = {};
-	for (int i = 0; i < gModelCount; i++)
-	{
-		models[i] = Model::create(mesh1);
-		mats[i] = models[i]->setMaterial( "res/shaders/textured.vert", "res/shaders/textured.frag", "POINT_LIGHT_COUNT 1");
-		mats[i]->setParameterAutoBinding("u_worldViewProjectionMatrix", "WORLD_VIEW_PROJECTION_MATRIX");
-		mats[i]->setParameterAutoBinding("u_inverseTransposeWorldViewMatrix", "INVERSE_TRANSPOSE_WORLD_VIEW_MATRIX");
-		mats[i]->getParameter("u_ambientColor")->setValue(Vector3(0.1f, 0.1f, 0.2f));
-		mats[i]->getParameter("u_pointLightColor[0]")->setValue(lightNode->getLight()->getColor());
-		mats[i]->getParameter("u_pointLightPosition[0]")->bindValue(lightNode, &Node::getTranslationWorld);
-		mats[i]->getParameter("u_pointLightRangeInverse[0]")->bindValue(lightNode->getLight(), &Light::getRangeInverse);
-		samplers[i] = mats[i]->getParameter("u_diffuseTexture")->setValue("res/png/crate.png", true);
-		samplers[i]->setFilterMode(Texture::LINEAR_MIPMAP_LINEAR, Texture::LINEAR);
-		mats[i]->getStateBlock()->setCullFace(true);
-		mats[i]->getStateBlock()->setDepthTest(true);
-		mats[i]->getStateBlock()->setDepthWrite(true);
-		sprintf(nodeName, head.meshName, i);
-		Node* node = _scene->addNode(nodeName);
-		node->setDrawable(models[i]);
-		SAFE_RELEASE(models[i]);
-	}
+	//char nodeName[42] = {};
+	//for (int i = 0; i < gModelCount; i++)
+	//{
+	//	models[i] = Model::create(mesh1);
+	//	mats[i] = models[i]->setMaterial( "res/shaders/textured.vert", "res/shaders/textured.frag", "POINT_LIGHT_COUNT 1");
+	//	mats[i]->setParameterAutoBinding("u_worldViewProjectionMatrix", "WORLD_VIEW_PROJECTION_MATRIX");
+	//	mats[i]->setParameterAutoBinding("u_inverseTransposeWorldViewMatrix", "INVERSE_TRANSPOSE_WORLD_VIEW_MATRIX");
+	//	mats[i]->getParameter("u_ambientColor")->setValue(Vector3(0.1f, 0.1f, 0.2f));
+	//	mats[i]->getParameter("u_pointLightColor[0]")->setValue(lightNode->getLight()->getColor());
+	//	mats[i]->getParameter("u_pointLightPosition[0]")->bindValue(lightNode, &Node::getTranslationWorld);
+	//	mats[i]->getParameter("u_pointLightRangeInverse[0]")->bindValue(lightNode->getLight(), &Light::getRangeInverse);
+	//	samplers[i] = mats[i]->getParameter("u_diffuseTexture")->setValue("res/png/crate.png", true);
+	//	samplers[i]->setFilterMode(Texture::LINEAR_MIPMAP_LINEAR, Texture::LINEAR);
+	//	mats[i]->getStateBlock()->setCullFace(true);
+	//	mats[i]->getStateBlock()->setDepthTest(true);
+	//	mats[i]->getStateBlock()->setDepthWrite(true);
+	//	sprintf(nodeName, head.meshName, i);
+	//	Node* node = _scene->addNode(nodeName);
+	//	node->setDrawable(models[i]);
+	//	SAFE_RELEASE(models[i]);
+	//}
 }
 
 void MayaViewer::finalize()
