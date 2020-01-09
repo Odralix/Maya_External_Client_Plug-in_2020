@@ -2,9 +2,10 @@
 
 MayaBatchOutput::MayaBatchOutput()
 {
-	m_MasterHead.camChanged = false;
 	m_MasterHead.meshCount = 0;
 	m_MasterHead.transformCount = 0;
+	m_MasterHead.camSwitched = false;
+	m_SwitchedCamName = "";
 	//Buffer size. Guessing user will rarely delete more than 10 objects at once.
 }
 
@@ -44,7 +45,7 @@ void MayaBatchOutput::SetTransform(TransHeader head, double transform[10])
 		std::string check(head.name);
 		if (check == "persp")
 		{
-			m_MasterHead.camChanged = true;
+		
 		}
 	}
 
@@ -57,7 +58,23 @@ void MayaBatchOutput::SetTransform(TransHeader head, double transform[10])
 
 void MayaBatchOutput::SetCamChanged(bool change)
 {
-	m_MasterHead.camChanged = change;
+	//m_MasterHead.camChanged = change;
+}
+
+void MayaBatchOutput::SetCamera(float attr[6], std::string name)
+{
+	if (camMap.find(name) == camMap.end())
+	{
+		float* arr = new float[6];
+		camMap[name] = arr;
+		//Not found
+	}
+
+	for (int i = 0; i < 6; i++)
+	{
+		camMap[name][i] = attr[i];
+	}
+	m_MasterHead.camCount++;
 }
 
 void  MayaBatchOutput::RemoveObject(std::string name)
@@ -66,14 +83,27 @@ void  MayaBatchOutput::RemoveObject(std::string name)
 	m_MasterHead.removedCount++;
 }
 
+void MayaBatchOutput::SwitchedCamera(std::string& name)
+{
+	m_MasterHead.camSwitched = true;
+	m_SwitchedCamName = name;
+}
+
 MasterHeader* MayaBatchOutput::GetMasterHeader()
 {
 	return &m_MasterHead;
 }
 
+std::string * MayaBatchOutput::getSwitchedName()
+{
+	return &m_SwitchedCamName;
+}
+
 void MayaBatchOutput::Reset()
 {
-	m_MasterHead.camChanged = false;
+	/*m_MasterHead.camChanged = false;*/
+	m_MasterHead.camSwitched = false;
+	m_MasterHead.camCount = 0;
 	m_MasterHead.meshCount = 0;
 	m_MasterHead.transformCount = 0;
 	m_MasterHead.removedCount = 0;
@@ -82,6 +112,11 @@ void MayaBatchOutput::Reset()
 	{
 		delete[] nr.second;
 	}
+	for (const auto& nr : camMap)
+	{
+		delete[] nr.second;
+	}
+	camMap.clear();
 	transformMap.clear();
 	meshMap.clear();
 }

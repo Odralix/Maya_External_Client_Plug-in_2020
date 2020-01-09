@@ -7,8 +7,10 @@ struct MasterHeader
 	int meshCount;
 	int transformCount;
 	int removedCount;
+	int camCount;
 	//int matCount;
-	bool camChanged;
+	//Has the viewer switched camera.
+	bool camSwitched;
 };
 
 enum MsgType

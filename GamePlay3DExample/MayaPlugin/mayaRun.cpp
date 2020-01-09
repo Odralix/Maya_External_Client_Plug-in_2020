@@ -7,6 +7,7 @@
 //#include <string>
 #include <map>
 #include "ComLib_reference.h"
+#include <maya/MCameraMessage.h>
 //#include "../Structs.h"
 #include "MayaBatchOutput.h"
 
@@ -31,7 +32,7 @@ void SendTransform(MObject transformNode)
 {
 	MFnDependencyNode nameFetch(transformNode);
 
-	cout << nameFetch.name() << " Transform changed!" << endl;
+	/*cout << nameFetch.name() << " Transform changed!" << endl;*/
 
 	//Local transform
 	MFnTransform getTransform(transformNode);
@@ -80,6 +81,7 @@ void SendTransform(MObject transformNode)
 	{
 		head.name[i] = name[i];
 	}
+
 	batch.SetTransform(head, transform);
 }
 
@@ -87,7 +89,7 @@ void nodeTransformChanged(MNodeMessage::AttributeMessage msg, MPlug &plug, MPlug
 {
 	MFnDependencyNode nameFetch(plug.node());
 
-	cout << "TRANSFORM CALLBACK FOR " << nameFetch.name() << endl;
+	/*cout << "TRANSFORM CALLBACK FOR " << nameFetch.name() << endl;*/
 
 	if (msg & MNodeMessage::kAttributeSet)
 	{
@@ -340,7 +342,6 @@ void nodeAdded(MObject &node, void * clientData)
 	/*cout << node.apiType() << endl;*/
 	//... implement this and other callbacks
 
-
 	// since all nodes are dependency nodes this should print all nodes.
 	MString name;
 	MFnDependencyNode dependNode(node);
@@ -398,16 +399,32 @@ void nodeRemoved(MObject &node, void * clientData)
 void timerCallback(float elapsedTime, float lastTime, void *clientData)
 {
 	/*cout << "Time Elapsed: " + to_string(elapsedTime) << endl;*/
-	if (batch.GetMasterHeader()->camChanged)
-	{
-		cout << "CAM WAS CHANGED" << endl;
-	}
+	//if (batch.GetMasterHeader()->camChanged)
+	//{
+	//	cout << "CAM WAS CHANGED" << endl;
+	//}
 
 	if ((batch.GetMasterHeader()->meshCount != 0) || (batch.GetMasterHeader()->transformCount != 0) || batch.GetMasterHeader()->removedCount != 0)
 	{
 		producer.send(batch.GetMasterHeader(), sizeof(MasterHeader));
-		cout<< "Mesh Count: " << batch.GetMasterHeader()->meshCount << endl;
-		cout << "Transform Count " << batch.GetMasterHeader()->transformCount << endl;
+		/*cout<< "Mesh Count: " << batch.GetMasterHeader()->meshCount << endl;
+		cout << "Transform Count " << batch.GetMasterHeader()->transformCount << endl;*/
+
+		if (batch.GetMasterHeader()->camSwitched) 
+		{
+			producer.send(batch.getSwitchedName()->c_str(), batch.getSwitchedName()->length());
+		}
+
+		for (const auto& it1 : batch.camMap)
+		{
+			producer.send(it1.first.c_str(), it1.first.length());
+
+			for (int i = 0; i < 6; i++)
+			{
+				cout << it1.second[i] << endl;
+			}
+			producer.send(it1.second, 6 * sizeof(float));
+		}
 
 		for (int i = 0; i < batch.removeNames.size(); i++)
 		{
@@ -483,6 +500,59 @@ void nameChanged(MObject &node, const MString &prevName, void *clientData)
 	}
 }
 
+void viewChangedCB(const MString& str, MObject &node, void* clientData)
+{
+	cout << "CALLED!!" << endl;
+	cout << str << endl;
+
+	MFnDagNode dagSearch(node);
+	MObject handle = dagSearch.parent(0);
+	MFnDagNode parent(handle);
+
+	cout << "Gives Node: " << parent.name().asChar() << endl;
+	std::string tmp(parent.name().asChar());
+	batch.SwitchedCamera(tmp);
+}
+void cameraAttributeChanged(MNodeMessage::AttributeMessage msg, MPlug &plug, MPlug &otherPlug, void* x)
+{
+	if(msg & MNodeMessage::kAttributeSet)
+	{
+		MObject transformNode = plug.node();
+
+			if (transformNode.hasFn(MFn::kTransform))
+			{
+				SendTransform(transformNode);
+			}
+	}
+	/* cout << plug.name() << ": " << plug.partialName() << endl;*/
+}
+
+void SendCam(MObject node)
+{
+	MFnCamera cam(node);
+	//make degrees
+	float arr[6];
+
+	arr[0] = cam.isOrtho();
+	arr[1] = cam.horizontalFieldOfView() *(180 / 3.14159265359);
+	arr[2] = cam.verticalFieldOfView()*(180 / 3.14159265359);
+	arr[3] = cam.aspectRatio();
+	arr[4] = cam.nearClippingPlane();
+	arr[5] = cam.farClippingPlane();
+
+	MFnDagNode dagSearch(node);
+	MObject handle = dagSearch.parent(0);
+	MFnDagNode parent(handle);
+
+	batch.SetCamera(arr, parent.name().asChar());
+	/*cout <<
+		cam.aspectRatio() << ", " <<
+		cam.farClippingPlane() << ", " <<
+		cam.nearClippingPlane() << ", " <<
+		cam.verticalFieldOfView() << ", " <<
+		cam.horizontalFieldOfView() << ", " <<
+		cam.isOrtho() << endl;*/
+}
 //DON'T FORGET Sending initialize info to the viewer should also happen here
 void addCallbacksToExistingNodes()
 {
@@ -490,27 +560,53 @@ void addCallbacksToExistingNodes()
 	MItDependencyNodes iterator(MFn::kMesh);
 	//Iterator for all dependency nodes that are transforms.
 	MItDependencyNodes iterator2(MFn::kTransform);
+	MItDependencyNodes camIterator(MFn::kCamera);
+	/*MItDependencyNodes iterator(MFn::kCameraView)*/
+	cout << "nrOf3DViews: " << M3dView::numberOf3dViews() << endl;
+	M3dView test = M3dView::active3dView();
+	//for (int i = 0; i < M3dView::numberOf3dViews(); i++)
+	//{
+	//	M3dView current;
+	//	M3dView::get3dView(i, current);
+
+	//	callbackIdArray.append(MNodeMessage::addAttributeChangedCallback(, cameraAttributeChanged, NULL, &status));
+	//}
+
+	MDagPath cam;
+	test.getCamera(cam);
+	MFnDagNode node(cam);
+	cout << "Cam Name: " << node.name().asChar() << endl;
+	//From the look of things I'll need to use "MCallbackId MUiMessage:: addCameraChangedCallback". But in order to do that I need the panel names. 
+	//It's either that or something with the M3dView class. Or possibly using the kCameraview to get the imagePlane?
+	// Worst case: https://forums.cgsociety.org/t/get-modelpanel-name-from-m3dview-c-api/1598993
+	//https://help.autodesk.com/view/MAYAUL/2019/ENU/?guid=Maya_SDK_MERGED_cpp_ref_class_m3d_view_html
+	//3Dview has a getCamera function. We simply MUST use it.
+	//Potential, DIRTY solution. Add a second timer callback and check the active viewport every few miliseconds. I would rather have a callback though.
 
 	while (!iterator.isDone())
 	{
-		// Getting already existing meshes vertecies.
-		MFnMesh inputMesh(iterator.thisNode());
-		MFloatPointArray vertexArr;
-		inputMesh.getPoints(vertexArr);
-		// Getting the name of the meshNode.
-		MString name;
-		MFnDependencyNode dependNode(iterator.thisNode());
-		name = dependNode.name();
-		const char* temp = name.asChar();
-		string meshName(temp);
-		// Pairing the map of the meshName and amount of vertices.
-		mapOfVertexArrays.insert(std::make_pair(meshName, vertexArr.length()));
+		//Camera is handled seperatly since timer callback apparently isn't fired during camera movement.
+		if (!iterator.thisNode().hasFn(MFn::kCamera))
+		{
+			// Getting already existing meshes vertecies.
+			MFnMesh inputMesh(iterator.thisNode());
+			MFloatPointArray vertexArr;
+			inputMesh.getPoints(vertexArr);
+			// Getting the name of the meshNode.
+			MString name;
+			MFnDependencyNode dependNode(iterator.thisNode());
+			name = dependNode.name();
+			const char* temp = name.asChar();
+			string meshName(temp);
+			// Pairing the map of the meshName and amount of vertices.
+			mapOfVertexArrays.insert(std::make_pair(meshName, vertexArr.length()));
 
-		MObject Mnode = iterator.thisNode();
-		//Batching already existing meshes for the viewer.
-		SendMesh(Mnode);
+			MObject Mnode = iterator.thisNode();
+			//Batching already existing meshes for the viewer.
+			SendMesh(Mnode);
 
-		callbackIdArray.append(MNodeMessage::addAttributeChangedCallback(iterator.thisNode(), nodeMeshAttributeChanged, NULL, &status));
+			callbackIdArray.append(MNodeMessage::addAttributeChangedCallback(iterator.thisNode(), nodeMeshAttributeChanged, NULL, &status));
+		}
 
 		iterator.next();
 	}
@@ -520,6 +616,37 @@ void addCallbacksToExistingNodes()
 		SendTransform(iterator2.thisNode());
 		callbackIdArray.append(MNodeMessage::addAttributeChangedCallback(iterator2.thisNode(), nodeTransformChanged, NULL, &status));
 		iterator2.next();
+	}
+
+	// I DESPISE the fact that I had to use a MEL-command from the API.
+	// Is there truly no way to access modelPanels directly from the API??
+	// I couldn't find any...
+	MStringArray modelPanels;
+	if (MGlobal::executeCommand("getPanel -type \"modelPanel\"", modelPanels))
+	{
+		int nrOfPanels = modelPanels.length();
+		for (int i = 0; i < nrOfPanels; i++)
+		{
+			callbackIdArray.append(MUiMessage::addCameraChangedCallback(modelPanels[i], viewChangedCB, NULL, &status));
+		}
+	}
+
+	while (!camIterator.isDone())
+	{
+		MFnDagNode dagSearch(camIterator.thisNode());
+		MObject handle = dagSearch.parent(0);
+		MFnDagNode parent(handle);
+
+		cout << "HERE" << endl;
+		cout << parent.name().asChar() << endl;
+		cout << dagSearch.name().asChar() << endl;
+
+		SendCam(camIterator.thisNode());
+
+		callbackIdArray.append(MNodeMessage::addAttributeChangedCallback(handle, cameraAttributeChanged, NULL, &status));
+		/*callbackIdArray.append(MCameraMessage::addBeginManipulationCallback(camIterator.thisNode(), cameraBeginManipCallback, NULL, &status));*/
+		
+		camIterator.next();
 	}
 }
 

@@ -24,7 +24,7 @@ void MayaViewer::initialize()
 	_scene = Scene::create();
 
 	Camera* cam = Camera::createPerspective(45.0f, getAspectRatio(), 1.0, 100.0f);
-	Node* cameraNode = _scene->addNode("persp");
+	Node* cameraNode = _scene->addNode("orig");
 	cameraNode->setCamera(cam);
 	_scene->setActiveCamera(cam);
 	SAFE_RELEASE(cam);
@@ -344,6 +344,74 @@ void MayaViewer::msgDirector()
 	MasterHeader head;
 	size_t Mlen;
 	consumer.recv((char*)&head, Mlen);
+
+	if (head.camSwitched)
+	{
+		char name[42] = {};
+		consumer.recv(name, Mlen);
+		if (_scene->findNode(name))
+		{
+			_scene->setActiveCamera(_scene->findNode(name)->getCamera());
+		}
+		else
+		{
+			std::cout << name << " CAMERA COULD NOT BE SWITCHED TO AS IT WASN'T FOUND";
+		}
+	}
+
+	if (head.camCount != 0)
+	{
+		size_t nLen;
+		for (int i = 0; i < head.camCount; i++)
+		{
+			char name[42] = {};
+			float camAttr[6];
+			consumer.recv(name, nLen);
+			consumer.recv((char*)camAttr, nLen);
+
+			//Does the Cam already exist?
+			if (_scene->findNode((char*)name))
+			{
+				Camera* cam = _scene->findNode((char*)name)->getCamera();
+				//Orthographic or perspective?
+				if (cam->getCameraType() == 2)
+				{
+					cam->setZoomX(camAttr[1]);
+					cam->setZoomY(camAttr[2]);
+					cam->setAspectRatio(camAttr[3]);
+					cam->setNearPlane(camAttr[4]);
+					cam->setFarPlane(camAttr[5]);
+				}
+				else
+				{
+					cam->setFieldOfView(camAttr[1]);
+					cam->setAspectRatio(camAttr[3]);
+					cam->setNearPlane(camAttr[4]);
+					cam->setFarPlane(camAttr[5]);
+				}
+			}
+			else
+			{
+				//Orthographic or perspective?
+				if (camAttr[0] == 1)
+				{
+					Camera* cam = Camera::createOrthographic(camAttr[1], camAttr[2], camAttr[3], camAttr[4], camAttr[5]);
+					Node* cameraNode = _scene->addNode(name);
+					cameraNode->setCamera(cam);
+					SAFE_RELEASE(cam);
+				}
+				else
+				{
+					Camera* cam = Camera::createPerspective(camAttr[1], camAttr[3], camAttr[4], camAttr[5]);
+					Node* cameraNode = _scene->addNode(name);
+					cameraNode->setCamera(cam);
+					SAFE_RELEASE(cam);
+					//Set transform too?
+				}
+			}
+		}
+	}
+
 	//Should be moved to last in case transform calls make it in.
 	if (head.removedCount != 0)
 	{
