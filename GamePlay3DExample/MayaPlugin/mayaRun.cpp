@@ -398,13 +398,13 @@ void nodeRemoved(MObject &node, void * clientData)
 
 void timerCallback(float elapsedTime, float lastTime, void *clientData)
 {
-	/*cout << "Time Elapsed: " + to_string(elapsedTime) << endl;*/
+	cout << "Time Elapsed: " + to_string(elapsedTime) << endl;
 	//if (batch.GetMasterHeader()->camChanged)
 	//{
 	//	cout << "CAM WAS CHANGED" << endl;
 	//}
 
-	if ((batch.GetMasterHeader()->meshCount != 0) || (batch.GetMasterHeader()->transformCount != 0) || batch.GetMasterHeader()->removedCount != 0)
+	if ((batch.GetMasterHeader()->meshCount != 0) || (batch.GetMasterHeader()->transformCount != 0) || batch.GetMasterHeader()->removedCount != 0 || batch.GetMasterHeader()->camSwitched)
 	{
 		producer.send(batch.GetMasterHeader(), sizeof(MasterHeader));
 		/*cout<< "Mesh Count: " << batch.GetMasterHeader()->meshCount << endl;
