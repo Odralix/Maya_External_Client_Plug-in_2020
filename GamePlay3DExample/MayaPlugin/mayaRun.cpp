@@ -102,13 +102,122 @@ void nodeTransformChanged(MNodeMessage::AttributeMessage msg, MPlug &plug, MPlug
 	}
 }
 
+void SetupMaterials(MObject &node)
+{
+	MFnMesh mesh(node);
+
+	//nr of parents
+	int numParents = mesh.parentCount();
+	cout << "Number of Parents: " << numParents << endl;
+
+	//Loop through
+	for (int i = 0; i < numParents; i++)
+	{
+		MFnDependencyNode node(mesh.parent(i));
+
+		MObjectArray shaders;
+
+		MIntArray indiciesPerFace;
+
+		mesh.getConnectedShaders(i, shaders, indiciesPerFace);
+
+		if (shaders.length() == 0)
+		{
+			cout << "MESH " << mesh.name().asChar() << " HAS NO SHADER" << endl;
+		}
+		else
+		{
+			MFnDependencyNode func(shaders[0]);
+
+			MPlug surfShader = func.findPlug("surfaceShader");
+
+			MPlugArray mats;
+
+			//Get the actual materials
+			surfShader.connectedTo(mats, true, false);
+
+			if (mats.length())
+			{
+				MFnDependencyNode funcMat(mats[0].node());
+				cout <<"Material Name: " << funcMat.name().asChar() << endl;
+				if (mats[0].node().hasFn(MFn::kLambert))
+				{
+					/*MPlugArray rgb;
+					MFnLambertShader shader(mats[0].node());*/
+					/*shader.findPlug("color").connectedTo(rgb, true, false);*/
+					
+
+					MPlug plug;
+					plug = funcMat.findPlug("color", true, &status);
+
+					if (plug.isArray())
+					{
+						cout << "I'm ARRAY" << endl;
+					}
+					MColor color;
+
+					cout << plug.name() << endl;
+					cout << "NumChildren: "<< plug.numChildren() << endl;
+
+					for(int j = 0; j< plug.numChildren(); j++)
+					{
+						cout << plug.child(j).name().asChar() << endl;
+						plug.child(j, &status).getValue(color[j]);
+					}
+
+					//Get plugs connected to color
+					MPlugArray plugs;
+					plug.connectedTo(plugs, true, false);
+					MString textureName;
+					for (int j = 0; j < plugs.length(); j++)
+					{
+						if (plugs[i].node().apiType() == MFn::kFileTexture)
+						{
+							cout << "hit "<< j << endl;
+							MFnDependencyNode dep(plugs[j].node());
+							MPlug ftn = dep.findPlug("ftn");
+							cout << "plugName: " << ftn.name().asChar() << endl;
+							ftn.getValue(textureName);
+						/*	textureName = dep.name();*/
+						}
+					}
+
+					cout << "R: " << color.r << endl;
+					cout << "G: " << color.g << endl;
+					cout << "B: " << color.b << endl;
+					cout << "A: " << color.a << endl;
+					cout << "Texture: " << textureName << endl;
+
+		/*			plug.getValue(color.r);
+					cout <<"R: " << color.r << endl;*/
+
+					/*cout << rgb.length() << endl;
+					for (int j = 0; j < rgb.length(); j++)
+					{
+						cout << rgb[j].name().asChar() << endl;
+					}*/
+
+					/*cout << plug.*/
+				}
+				else
+				{
+					//"special" material type like Stingray PBS or something else not deferred from lambert.
+					// Doesn't have the standard "color" plug and should be handled differently here.
+				}
+			}
+			else
+			{
+				cout << "MESH " << mesh.name().asChar() << "HAS NO MATS" << endl;
+			}
+		}
+	}
+}
+
 //For use only on MObjects with a connected MFn::kMesh.
 void SendMesh(MObject Mnode)
 {
 	if (Mnode.hasFn(MFn::kMesh))
 	{
-
-
 		MFnDependencyNode meshNode(Mnode);
 		MFnMesh inputMesh(Mnode);
 
@@ -232,6 +341,41 @@ void SendMesh(MObject Mnode)
 				count++;
 			}
 		}
+
+		//Handle Material
+		//Quite possibly the callbacks are added before the object has finished being created. Would make sense.
+		//But in that case how can I possibly add a callback or stuff like that for the shader at the beginning?
+		MObjectArray shaders;
+		MObjectArray comps;
+
+		MIntArray indiciesPerFace;
+
+		MFnDagNode path(Mnode);
+		MFnMesh get(path.dagPath(&status).node());
+
+		inputMesh.getConnectedSetsAndMembers(path.dagPath(&status).instanceNumber(), shaders, comps, true);
+
+		//get.getConnectedShaders(0, shaders, indiciesPerFace);
+
+		cout << "NR OF SHADERS: " << shaders.length() << endl;
+		MFnDependencyNode sDepNode(shaders[0]);
+
+		cout << "ShaderName: " << sDepNode.name() << endl;
+
+		SetupMaterials(Mnode);
+		/*MPlug surfShade = sDepNode.findPlug("surfaceShader");*/
+
+		//MPlugArray mats;
+
+		//surfShade.connectedTo(mats, true, false);
+		//if (mats.length != 0)
+		//{
+
+		//}
+		//else
+		//{
+
+		//}
 		// Sending the collected information.
 
 		/*MsgType type = meshType;*/
@@ -328,6 +472,59 @@ void nodeMeshAttributeChanged(MNodeMessage::AttributeMessage msg, MPlug &plug, M
 	}
 }
 
+void matChanged(MNodeMessage::AttributeMessage msg, MPlug &plug, MPlug &otherPlug, void* x)
+{
+	 cout << plug.name() << ": " << plug.partialName() << endl;
+	 //cout << "message:" << endl;
+	 //cout << msg << endl;
+	 //cout << plug.node().apiTypeStr() << endl;
+
+	 if (msg & MNodeMessage::kAttributeSet)
+	 {
+		 //One of the attributes such as color or transparency has been set.
+		 if (plug.partialName() == "c")
+		 {
+			 cout << "colour changed" << endl;
+			 cout << "____" << endl;
+		 }
+	 }
+	 else if (msg & MNodeMessage::kConnectionMade)
+	 {
+		 if (plug.partialName() == "c")
+		 {
+			 //Something was plugged into the color plug, most likely a texture.
+			 //TODO: use to determine when a texture is connected and thusly shader switches from colour to texture in viewer
+			 cout << "connection MADE" << endl;
+			 cout << "____" << endl;
+		 }
+	 }
+	 else if (msg & MNodeMessage::kConnectionBroken)
+	 {
+		 if (plug.partialName() == "c")
+		 {
+			 //Something was unplugged from the color plug, most likely a texture.
+			 //TODO: use to determine when a texture is disconnected and thusly shader switches from texture to color in viewer
+			 cout << "connection Broken" << endl;
+			 cout << "____" << endl;
+		 }
+	 }
+	/* cout << "____" << endl;*/
+	/*cout << "Material Info" << endl;*/
+}
+
+void textureChanged(MNodeMessage::AttributeMessage msg, MPlug &plug, MPlug &otherPlug, void* x)
+{
+	/*cout << plug.name() << ": " << plug.partialName() << endl;*/
+	if (msg & MNodeMessage::kAttributeSet && plug.partialName() == "ftn")
+	{
+		// Called every time the texture for a file is changed.
+		// Thus we can also send it to the viewer in real time.
+		cout << "Attribute was set" << endl;
+	}
+
+}
+
+MObject lastAddedNode;
 
 /*
  * how Maya calls this method when a node is added.
@@ -352,6 +549,7 @@ void nodeAdded(MObject &node, void * clientData)
 	if (lastName != name)
 	{
 		cout << "Added node: " + name << endl;
+		/*cout << node.apiTypeStr() << endl;*/
 	}
 
 	if (node.hasFn(MFn::kMesh))
@@ -361,12 +559,26 @@ void nodeAdded(MObject &node, void * clientData)
 
 		// Creating a map between the mesh and its first vertex array in order to prevent multiple printing.
 		MFnMesh inputMesh(node);
+		//MObjectArray shaders;
+		//MObjectArray comps;
+
+		//MIntArray indiciesPerFace;
+
+		//MFnDagNode path(node);
+		//MFnMesh get(path.dagPath(&status).node());
+
+		//inputMesh.getConnectedSetsAndMembers(path.dagPath(&status).instanceNumber(), shaders, comps, true);
+		//
+		////get.getConnectedShaders(0, shaders, indiciesPerFace);
+
+		//cout << shaders.length() << endl;
+
 		MFloatPointArray vertexArr;
 		inputMesh.getPoints(vertexArr);
 		const char* temp = name.asChar();
-
 		string meshName(temp);
 
+		cout << meshName << endl;
 		mapOfVertexArrays.insert(std::make_pair(meshName, vertexArr.length()));
 
 		/*callbackIdArray.append(MPolyMessage::addPolyTopologyChangedCallback(node, topologyChanged, NULL, &status));*/
@@ -376,7 +588,34 @@ void nodeAdded(MObject &node, void * clientData)
 	{
 		callbackIdArray.append(MNodeMessage::addAttributeChangedCallback(node, nodeTransformChanged, NULL, &status));
 	}
+	else if (node.hasFn(MFn::kShadingEngine))
+	{
+		callbackIdArray.append(MNodeMessage::addAttributeChangedCallback(lastAddedNode, matChanged, NULL, &status));
+	/*	MFnDependencyNode theNode(node);*/
+		//MObjectArray shaders;
+		//MIntArray indiciesPerFace;
 
+		//MPlug sPlug = theNode.findPlug("surfaceShader",&status);
+		//if (status == MS::kSuccess)
+		//{
+		//	MPlugArray mat;
+
+		//	//Get the actual material
+		//	sPlug.connectedTo(mat, true, false);
+		//	cout << "nrOfPlugs: " << mat.length() << endl;
+		//	//callbackIdArray.append(MNodeMessage::addAttributeChangedCallback(mat[0].node(), matChanged2, NULL, &status));
+		//}
+		//else
+		//{
+		//	cout << "SURFACE SHADER WASN'T FOUND!!" << endl;
+		//}
+	}
+	else if (node.hasFn(MFn::kFileTexture))
+	{
+		callbackIdArray.append(MNodeMessage::addAttributeChangedCallback(node, textureChanged, NULL, &status));
+	}
+
+	lastAddedNode = node;
 	lastName = name;
 }
 
@@ -398,7 +637,7 @@ void nodeRemoved(MObject &node, void * clientData)
 
 void timerCallback(float elapsedTime, float lastTime, void *clientData)
 {
-	cout << "Time Elapsed: " + to_string(elapsedTime) << endl;
+	/*cout << "Time Elapsed: " + to_string(elapsedTime) << endl;*/
 	//if (batch.GetMasterHeader()->camChanged)
 	//{
 	//	cout << "CAM WAS CHANGED" << endl;

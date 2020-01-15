@@ -528,3 +528,8 @@ void MayaViewer::applyTransformation(const char * name, double * transform)
 	}
 	
 }
+
+Material * MayaViewer::createMaterial()
+{
+	return nullptr;
+}
