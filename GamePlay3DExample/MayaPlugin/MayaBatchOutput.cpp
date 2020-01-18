@@ -77,6 +77,28 @@ void MayaBatchOutput::SetCamera(float attr[6], std::string name)
 	m_MasterHead.camCount++;
 }
 
+void MayaBatchOutput::SetMaterial(std::string & matName, float * vals, int len)
+{
+	if (matMap[matName].colors != nullptr)
+	{
+		delete[] matMap[matName].colors;
+	}
+	matMap[matName].colors = new float[len];
+	matMap[matName].numFloats = len;
+	for (int i = 0; i < len; i++)
+	{
+		matMap[matName].colors[i] = vals[i];
+		m_MasterHead.matCount++;
+	}
+}
+
+void MayaBatchOutput::SetMaterial(std::string & matName, std::string& textureName)
+{
+	matMap[matName].name = textureName;
+	m_MasterHead.matCount++;
+}
+
+
 void  MayaBatchOutput::RemoveObject(std::string name)
 {
 	removeNames.push_back(name);
@@ -107,6 +129,7 @@ void MayaBatchOutput::Reset()
 	m_MasterHead.meshCount = 0;
 	m_MasterHead.transformCount = 0;
 	m_MasterHead.removedCount = 0;
+	m_MasterHead.matCount = 0;
 	removeNames.clear();
 	for (const auto& nr : transformMap)
 	{
@@ -116,7 +139,12 @@ void MayaBatchOutput::Reset()
 	{
 		delete[] nr.second;
 	}
+	for (const auto& nr : matMap)
+	{
+		delete[] nr.second.colors;
+	}
 	camMap.clear();
 	transformMap.clear();
 	meshMap.clear();
+	matMap.clear();
 }

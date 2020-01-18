@@ -102,13 +102,133 @@ void nodeTransformChanged(MNodeMessage::AttributeMessage msg, MPlug &plug, MPlug
 	}
 }
 
+void SendMaterial(MObject &node)
+{
+	MPlug colPlug;
+	MPlug ambColPlug;
+	MFnDependencyNode funcMat(node);
+
+	colPlug = funcMat.findPlug("color", true, &status);
+	ambColPlug = funcMat.findPlug("ambc", true, &status);
+	cout << colPlug.name() << endl;
+	cout << "" << endl;
+	cout << ambColPlug.name() << endl;
+	cout << endl;
+
+	//Check if a plug has textures
+	MPlugArray plugs;
+	colPlug.connectedTo(plugs, true, false);
+	if (plugs.length() != 0)
+	{
+		MString textureName = "";
+		for (int j = 0; j < plugs.length(); j++)
+		{
+			if (plugs[j].node().apiType() == MFn::kFileTexture)
+			{
+				cout << "hit " << j << endl;
+				MFnDependencyNode dep(plugs[j].node());
+				MPlug ftn = dep.findPlug("ftn");
+				cout << "plugName: " << ftn.name().asChar() << endl;
+				ftn.getValue(textureName);
+				cout << textureName << endl;
+				batch.SetMaterial((std::string)funcMat.name().asChar(), (std::string)textureName.asChar());
+			}
+		}
+	}
+	else
+	{
+		MColor color;
+		for (int j = 0; j < colPlug.numChildren(); j++)
+		{
+			/*cout << colPlug.child(j).name().asChar() << endl;*/
+			colPlug.child(j, &status).getValue(color[j]);
+		}
+
+		cout << "R: " << color.r << endl;
+		cout << "G: " << color.g << endl;
+		cout << "B: " << color.b << endl;
+		
+		float rgb[3];
+		rgb[0] = color.r;
+		rgb[1] = color.g;
+		rgb[2] = color.b;
+
+		batch.SetMaterial((std::string)funcMat.name().asChar(), rgb, 3);
+		/*cout << "A: " << color.a << endl;*/
+	}
+
+	MColor color;
+	for (int j = 0; j < ambColPlug.numChildren(); j++)
+	{
+		cout << ambColPlug.child(j).name().asChar() << endl;
+		ambColPlug.child(j, &status).getValue(color[j]);
+	}
+
+	cout << "ambcR: " << color.r << endl;
+	cout << "ambcG: " << color.g << endl;
+	cout << "ambcB: " << color.b << endl;
+}
+
+// Must be sent with node as a mesh that is already in the MayaBatchOutput.
+// Thus should be used ASAP after SendMesh function
+void SendMaterialName(MObject &node)
+{
+	MFnMesh mesh(node);
+
+	//nr of parents
+	int numParents = mesh.parentCount();
+	/*cout << "Number of Parents: " << numParents << endl;*/
+	cout << "Entered SendMaterialName" << endl;
+
+	//Loop through
+	for (int i = 0; i < numParents; i++)
+	{
+		/*MFnDependencyNode pNode(mesh.parent(i));*/
+
+		MObjectArray shaders;
+
+		MIntArray indiciesPerFace;
+
+		mesh.getConnectedShaders(i, shaders, indiciesPerFace);
+
+		if (shaders.length() == 0)
+		{
+			cout << "MESH " << mesh.name().asChar() << " HAS NO SHADER" << endl;
+		}
+		else
+		{
+			MFnDependencyNode func(shaders[0]);
+
+			MPlug surfShader = func.findPlug("surfaceShader");
+
+			MPlugArray mats;
+
+			//Get the actual materials
+			surfShader.connectedTo(mats, true, false);
+
+			if (mats.length())
+			{
+				MFnDependencyNode funcMat(mats[0].node());
+				cout << "Material Name: " << funcMat.name().asChar() << endl;
+				//Note, the name is technically the transform and not the mesh.
+				MFnDagNode dagSearch(node);
+				MObject handle = dagSearch.parent(0);
+				MFnDagNode parent(handle);
+
+				batch.meshMap[(std::string)parent.name().asChar()].SetMatName(funcMat.name().asChar(), funcMat.name().length());
+			}
+		}
+	}
+}
+
 void SetupMaterials(MObject &node)
 {
 	MFnMesh mesh(node);
 
 	//nr of parents
 	int numParents = mesh.parentCount();
-	cout << "Number of Parents: " << numParents << endl;
+	/*cout << "Number of Parents: " << numParents << endl;*/
+	cout << "Entered SetupMaterials" << endl;
 
 	//Loop through
 	for (int i = 0; i < numParents; i++)
@@ -168,10 +288,10 @@ void SetupMaterials(MObject &node)
 					//Get plugs connected to color
 					MPlugArray plugs;
 					plug.connectedTo(plugs, true, false);
-					MString textureName;
+					MString textureName = "";
 					for (int j = 0; j < plugs.length(); j++)
 					{
-						if (plugs[i].node().apiType() == MFn::kFileTexture)
+						if (plugs[j].node().apiType() == MFn::kFileTexture)
 						{
 							cout << "hit "<< j << endl;
 							MFnDependencyNode dep(plugs[j].node());
@@ -182,11 +302,23 @@ void SetupMaterials(MObject &node)
 						}
 					}
 
-					cout << "R: " << color.r << endl;
-					cout << "G: " << color.g << endl;
-					cout << "B: " << color.b << endl;
-					cout << "A: " << color.a << endl;
-					cout << "Texture: " << textureName << endl;
+					if (textureName == "")
+					{
+						cout << "R: " << color.r << endl;
+						cout << "G: " << color.g << endl;
+						cout << "B: " << color.b << endl;
+					/*	cout << "A: " << color.a << endl;*/
+						float rgb[3];
+						rgb[0] = color.r;
+						rgb[1] = color.g;
+						rgb[2] = color.b;
+						/*batch.SetMaterial((std::string)funcMat.name().asChar(), rgb,3);*/
+					}
+					else
+					{
+						cout << "Texture: " << textureName << endl;
+						/*batch.SetMaterial((std::string)funcMat.name().asChar(), (std::string)textureName.asChar());*/
+					}
 
 		/*			plug.getValue(color.r);
 					cout <<"R: " << color.r << endl;*/
@@ -345,24 +477,24 @@ void SendMesh(MObject Mnode)
 		//Handle Material
 		//Quite possibly the callbacks are added before the object has finished being created. Would make sense.
 		//But in that case how can I possibly add a callback or stuff like that for the shader at the beginning?
-		MObjectArray shaders;
-		MObjectArray comps;
+		//MObjectArray shaders;
+		//MObjectArray comps;
 
-		MIntArray indiciesPerFace;
+		//MIntArray indiciesPerFace;
 
-		MFnDagNode path(Mnode);
-		MFnMesh get(path.dagPath(&status).node());
+		//MFnDagNode path(Mnode);
+		//MFnMesh get(path.dagPath(&status).node());
 
-		inputMesh.getConnectedSetsAndMembers(path.dagPath(&status).instanceNumber(), shaders, comps, true);
+		//inputMesh.getConnectedSetsAndMembers(path.dagPath(&status).instanceNumber(), shaders, comps, true);
 
-		//get.getConnectedShaders(0, shaders, indiciesPerFace);
+		////get.getConnectedShaders(0, shaders, indiciesPerFace);
 
-		cout << "NR OF SHADERS: " << shaders.length() << endl;
-		MFnDependencyNode sDepNode(shaders[0]);
+		//cout << "NR OF SHADERS: " << shaders.length() << endl;
+		//MFnDependencyNode sDepNode(shaders[0]);
 
-		cout << "ShaderName: " << sDepNode.name() << endl;
+		//cout << "ShaderName: " << sDepNode.name() << endl;
 
-		SetupMaterials(Mnode);
+		//SetupMaterials(Mnode);
 		/*MPlug surfShade = sDepNode.findPlug("surfaceShader");*/
 
 		//MPlugArray mats;
@@ -407,7 +539,7 @@ void SendMesh(MObject Mnode)
 
 void nodeMeshAttributeChanged(MNodeMessage::AttributeMessage msg, MPlug &plug, MPlug &otherPlug, void* x)
 {
-	/* cout << plug.name() << ": " << plug.partialName() << endl;*/
+	 /*cout << plug.name() << ": " << plug.partialName() << endl;*/
 
 	// For individually or soft select moved verticies. 
 	if (msg & MNodeMessage::kAttributeSet)
@@ -468,13 +600,27 @@ void nodeMeshAttributeChanged(MNodeMessage::AttributeMessage msg, MPlug &plug, M
 		if (arrLen != vertexArr.length())
 		{
 			SendMesh(Mnode);
+			SendMaterialName(Mnode);
 		}
+	}
+	else if ((msg & MNodeMessage::kConnectionMade) && (plug.partialName() == "iog"))
+	{
+		//New connection was made in the Inst Obj Groups. Most likely it's a material change.
+
+		/*SendMaterialName(plug.node());*/
+
+		/*SetupMaterials(plug.node());*/
+		//MPlugArray connects;
+		//plug.connectedTo(connects, false, true);
+		//MFnDependencyNode shadeNode(connects[0].node());
+		//MFnDependencyNode meshNode(plug.node());
+		//cout << "Mesh '" << meshNode.name().asChar() << "' now has shader '" << shadeNode.name().asChar() << "'" << endl;
 	}
 }
 
 void matChanged(MNodeMessage::AttributeMessage msg, MPlug &plug, MPlug &otherPlug, void* x)
 {
-	 cout << plug.name() << ": " << plug.partialName() << endl;
+	 /*cout << plug.name() << ": " << plug.partialName() << endl;*/
 	 //cout << "message:" << endl;
 	 //cout << msg << endl;
 	 //cout << plug.node().apiTypeStr() << endl;
@@ -484,7 +630,7 @@ void matChanged(MNodeMessage::AttributeMessage msg, MPlug &plug, MPlug &otherPlu
 		 //One of the attributes such as color or transparency has been set.
 		 if (plug.partialName() == "c")
 		 {
-			 cout << "colour changed" << endl;
+			 cout << "color changed" << endl;
 			 cout << "____" << endl;
 		 }
 	 }
@@ -519,11 +665,22 @@ void textureChanged(MNodeMessage::AttributeMessage msg, MPlug &plug, MPlug &othe
 	{
 		// Called every time the texture for a file is changed.
 		// Thus we can also send it to the viewer in real time.
-		cout << "Attribute was set" << endl;
+		MFnDependencyNode fileNode(plug.node());
+		MString texName;
+		MPlugArray matPlugs;
+
+		fileNode.findPlug("oc").connectedTo(matPlugs, false, true);
+
+		/*MPlug test = fileNode.findPlug("oc");*/
+
+		MFnDependencyNode matNode(matPlugs[0].node());
+		plug.getValue(texName);
+		cout << "Texture changed for Material "<< matNode.name().asChar() <<" to " << texName << endl;
 	}
 
 }
-
+// Used to help make some callback assignments more general
+// Such as kShading engine which appears for every material whereas the type of the node before varies with material.
 MObject lastAddedNode;
 
 /*
@@ -660,7 +817,7 @@ void timerCallback(float elapsedTime, float lastTime, void *clientData)
 
 			for (int i = 0; i < 6; i++)
 			{
-				cout << it1.second[i] << endl;
+				/*cout << it1.second[i] << endl;*/
 			}
 			producer.send(it1.second, 6 * sizeof(float));
 		}
@@ -669,6 +826,37 @@ void timerCallback(float elapsedTime, float lastTime, void *clientData)
 		{
 			cout << "SENDING " << batch.removeNames[i].c_str() << endl;
 			producer.send(batch.removeNames[i].c_str(), batch.removeNames[i].length());
+		}
+
+		for (const auto& mat : batch.matMap)
+		{
+			MatHeader head;
+			cout << "Material Name: " << mat.first << endl;
+			//this allows program to crash if name is too long. That's silly.
+			for (int i = 0; i < mat.first.length(); i++)
+			{
+				head.matName[i] = mat.first.at(i);
+			}
+			if (mat.second.name != "")
+			{
+				head.isTextured = true;
+				for (int i = 0; i < mat.second.name.length(); i++)
+				{
+					head.textureName[i] = mat.second.name.at(i);
+				}
+				cout << "Texture Name: " << head.textureName << endl;
+				//Allows me to use just one message but at what cost?
+				/*producer.send(&head, sizeof(MatHeader));*/
+			}
+			else
+			{
+				
+				for (int i = 0; i < mat.second.numFloats; i++)
+				{
+					cout << "c" << i << ": " << mat.second.colors[i] << endl;
+				}
+			}
+			
 		}
 
 		for (const auto& nr : batch.meshMap)
@@ -685,6 +873,16 @@ void timerCallback(float elapsedTime, float lastTime, void *clientData)
 			cout << "MeshName: " << s << endl;
 			cout << "IndexCount: " << meshHead.indexCount << endl;
 			cout << "nrOfVerts: " << meshHead.nrOfVerts << endl;
+
+			//There's a more efficent way to handle the material name.
+			//This is a temporary mesure that while functional is hard to follow and generally unnecesarily complex.
+			string tmpString;
+			tmpString.resize(nr.second.GetMatLen());
+			for (int i = 0; i < tmpString.length(); i++)
+			{
+				tmpString[i] = nr.second.GetMatName()[i];
+			}
+			cout << "Material name: " << tmpString << endl;
 
 			/*for (int i = 0; i < meshHead.indexCount; i++)
 			{
@@ -800,6 +998,8 @@ void addCallbacksToExistingNodes()
 	//Iterator for all dependency nodes that are transforms.
 	MItDependencyNodes iterator2(MFn::kTransform);
 	MItDependencyNodes camIterator(MFn::kCamera);
+	MItDependencyNodes matIterator(MFn::kLambert); //Most maya materials are based off of lambert.
+	MItDependencyNodes textureIterator(MFn::kFileTexture);
 	/*MItDependencyNodes iterator(MFn::kCameraView)*/
 	cout << "nrOf3DViews: " << M3dView::numberOf3dViews() << endl;
 	M3dView test = M3dView::active3dView();
@@ -876,9 +1076,9 @@ void addCallbacksToExistingNodes()
 		MObject handle = dagSearch.parent(0);
 		MFnDagNode parent(handle);
 
-		cout << "HERE" << endl;
+	/*	cout << "HERE" << endl;
 		cout << parent.name().asChar() << endl;
-		cout << dagSearch.name().asChar() << endl;
+		cout << dagSearch.name().asChar() << endl;*/
 
 		SendCam(camIterator.thisNode());
 
@@ -886,6 +1086,23 @@ void addCallbacksToExistingNodes()
 		/*callbackIdArray.append(MCameraMessage::addBeginManipulationCallback(camIterator.thisNode(), cameraBeginManipCallback, NULL, &status));*/
 		
 		camIterator.next();
+	}
+
+	while (!matIterator.isDone())
+	{	
+		//We want to send all the materials initially.
+		//Then when a material is switched here we want to switch in the viewer
+		//If a new material is created, we want to send that to the viewer also.
+		/*SetupMaterials(matIterator.thisNode());*/
+		SendMaterial(matIterator.thisNode());
+		callbackIdArray.append(MNodeMessage::addAttributeChangedCallback(matIterator.thisNode(), matChanged, NULL, &status));
+		matIterator.next();
+	}
+
+	while (!textureIterator.isDone())
+	{
+		callbackIdArray.append(MNodeMessage::addAttributeChangedCallback(textureIterator.thisNode(), textureChanged, NULL, &status));
+		textureIterator.next();
 	}
 }
 

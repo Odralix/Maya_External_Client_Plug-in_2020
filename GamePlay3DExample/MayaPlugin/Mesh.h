@@ -6,6 +6,8 @@ private:
 	int nrOfVerts;
 	int indexCount;
 	//char meshName[42];
+	char *matName;
+	int matNameLen;
 
 	int* triIndicies;
 	float* verts;
@@ -16,6 +18,7 @@ public:
 
 	void SetTriIndicies(int* indicies, int size);
 	void SetVerts(float* newVerts, int size);
+	void SetMatName(const char* name, int len);
 	void SetTransform(double* newTransform);
 
 	void SetNrOfVerts(int newNr);
@@ -23,6 +26,8 @@ public:
 
 	int* GetIndicies() const;
 	float* GetVerts() const;
+	char* GetMatName() const;
+	int GetMatLen() const;
 	double* GetTransform();
 
 	int GetNrOfVerts() const;

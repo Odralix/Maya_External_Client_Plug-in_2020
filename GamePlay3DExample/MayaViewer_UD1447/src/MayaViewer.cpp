@@ -293,7 +293,7 @@ Mesh * MayaViewer::setupInputMesh(MeshHeader &mHead)
 	float * verts = new float[mHead.nrOfVerts * 8];
 	consumer.recv((char*)verts, vertSize);
 
-	size_t a = inSize / sizeof(int);
+	//size_t a = inSize / sizeof(int);
 
 	//for (int i = 0; i < a; i++)
 	//{
@@ -301,30 +301,30 @@ Mesh * MayaViewer::setupInputMesh(MeshHeader &mHead)
 	//	std::cout << anInt << std::endl;
 	//}
 
-	size_t b = vertSize / sizeof(float);
+	//size_t b = vertSize / sizeof(float);
 
-	std::string checker;
-	int c = 0;
+	//std::string checker;
+	//int c = 0;
 
-	for (int i = 0; i < mHead.indexCount; i++)
-	{
-		checker.append(std::to_string(arr[i]));
-		checker.append(" ");
-	}
+	//for (int i = 0; i < mHead.indexCount; i++)
+	//{
+	//	checker.append(std::to_string(arr[i]));
+	//	checker.append(" ");
+	//}
 
-	checker = "";
+	//checker = "";
 
-	for (int i = 0; i < b; i++)
-	{
-		checker.append(std::to_string(verts[i]));
-		checker.append(" ");
-		c++;
-		if (c == 8)
-		{
-			checker = "";
-			c = 0;
-		}
-	}
+	//for (int i = 0; i < b; i++)
+	//{
+	//	checker.append(std::to_string(verts[i]));
+	//	checker.append(" ");
+	//	c++;
+	//	if (c == 8)
+	//	{
+	//		checker = "";
+	//		c = 0;
+	//	}
+	//}
 
 	return createImportMesh(verts, arr, mHead.nrOfVerts, mHead.indexCount);
 }
@@ -434,6 +434,47 @@ void MayaViewer::msgDirector()
 		}
 	}
 
+	if (head.matCount != 0)
+	{
+		MatHeader mHead;
+		size_t matSize = sizeof(MatHeader);
+		consumer.recv((char*)&mHead, matSize);
+
+		std::string mName = mHead.matName;
+		std::string texName = mHead.textureName;
+
+		Material * mat;
+
+		if (mHead.isTextured == true)
+		{
+			mat = gameplay::Material::create("res/shaders/textured.vert", "res/shaders/textured.frag", "POINT_LIGHT_COUNT 1");
+
+			Texture::Sampler* sampler;
+			sampler = mat->getParameter("u_diffuseTexture")->setValue(mHead.textureName, true);
+			sampler->setFilterMode(Texture::LINEAR_MIPMAP_LINEAR, Texture::LINEAR);
+		}
+		else
+		{
+			mat = gameplay::Material::create("colored/shaders/textured.vert", "colored/shaders/textured.frag", "POINT_LIGHT_COUNT 1");
+			mat->getParameter("u_diffuseColor")->setValue(Vector3(1.0, 0.0f, 0.0f));
+		}
+
+		mat->setParameterAutoBinding("u_worldViewProjectionMatrix", "WORLD_VIEW_PROJECTION_MATRIX");
+		mat->setParameterAutoBinding("u_inverseTransposeWorldViewMatrix", "INVERSE_TRANSPOSE_WORLD_VIEW_MATRIX");
+		mat->getParameter("u_ambientColor")->setValue(Vector3(0.1f, 0.1f, 0.2f));
+		mat->getParameter("u_pointLightColor[0]")->setValue(_scene->findNode("light")->getLight()->getColor());
+		mat->getParameter("u_pointLightPosition[0]")->bindValue(_scene->findNode("light"), &Node::getTranslationWorld);
+		mat->getParameter("u_pointLightRangeInverse[0]")->bindValue(_scene->findNode("light")->getLight(), &Light::getRangeInverse);
+
+		mat->getStateBlock()->setCullFace(true);
+		mat->getStateBlock()->setDepthTest(true);
+		mat->getStateBlock()->setDepthWrite(true);
+
+		materialMap[mHead.matName] = mat;
+
+		std::cout << mName << std::endl;
+	}
+
 	//If unnecesary since mayaRun already checks
 	if (head.meshCount != 0)
 	{
@@ -461,6 +502,8 @@ void MayaViewer::msgDirector()
 			mat->getStateBlock()->setCullFace(true);
 			mat->getStateBlock()->setDepthTest(true);
 			mat->getStateBlock()->setDepthWrite(true);
+
+			//mesh->setMaterial(materialMap["lambert2"]);
 
 			sprintf(nodeName, inMeshArr[i].meshName, i);
 			Node* node = _scene->addNode(nodeName);

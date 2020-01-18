@@ -6,6 +6,7 @@ Mesh::Mesh()
 	verts = nullptr;
 	nrOfVerts = -1;
 	indexCount = -1;
+	matName = nullptr;
 	//for (int i = 0; i < 10; i++)
 	//{
 	//	transform[i] = -1;
@@ -20,6 +21,7 @@ Mesh::~Mesh()
 {
 	delete[] triIndicies;
 	delete[] verts;
+	delete[] matName;
 }
 
 void Mesh::SetTriIndicies(int* indicies, int size)
@@ -41,6 +43,21 @@ void Mesh::SetVerts(float* newVerts, int size)
 	{
 		verts[i] = newVerts[i];
 	}
+}
+
+void Mesh::SetMatName(const char * name, int len)
+{
+	if (matName != nullptr)
+	{
+		delete[] matName;
+	}
+	matName = new char[len];
+
+	for (int i = 0; i < len; i++)
+	{
+		matName[i] = name[i];
+	}
+	matNameLen = len;
 }
 
 //void Mesh::SetTransform(double * newTransform)
@@ -69,6 +86,16 @@ int * Mesh::GetIndicies() const
 float * Mesh::GetVerts() const
 {
 	return verts;
+}
+
+char * Mesh::GetMatName() const
+{
+	return matName;
+}
+
+int Mesh::GetMatLen() const
+{
+	return matNameLen;
 }
 
 //double * Mesh::GetTransform()

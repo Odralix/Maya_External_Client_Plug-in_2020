@@ -3,6 +3,7 @@
 
 #include "gameplay.h"
 #include "../../Structs.h"
+#include <unordered_map>
 
 using namespace gameplay;
 
@@ -73,6 +74,8 @@ private:
     Scene* _scene;
     bool _wireframe;
 	MeshHeader *inMeshArr;
+	std::unordered_map<std::string, Material*> materialMap;
+	//unordered_map MaterialMap;
 };
 
 #endif

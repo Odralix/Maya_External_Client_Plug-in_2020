@@ -8,6 +8,7 @@ struct MasterHeader
 	int transformCount;
 	int removedCount;
 	int camCount;
+	int matCount;
 	//int matCount;
 	//Has the viewer switched camera.
 	bool camSwitched;
@@ -25,6 +26,16 @@ struct MeshHeader
 	int nrOfVerts;
 	int indexCount;
 	char meshName[NAME_LEN] = { '\0' };
+};
+
+struct MatHeader
+{
+	bool isTextured;
+	//int lenMatName
+	//int lenTextureName
+	char matName[NAME_LEN] = { '\0' };
+	char textureName[NAME_LEN] = { '\0' };
+
 };
 
 struct TransHeader

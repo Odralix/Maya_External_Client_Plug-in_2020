@@ -1,8 +1,8 @@
 #pragma once
 #include "../Structs.h"
 #include "Mesh.h"
+#include "TempStruct.h"
 #include <unordered_map>
-#include <string>
 #include <vector>
 
 class MayaBatchOutput
@@ -18,6 +18,8 @@ public:
 	void SetTransform(TransHeader head, double transform[10]);
 	void SetCamChanged(bool change);
 	void SetCamera(float attr[6], std::string Name);
+	void SetMaterial(std::string &matName,float* vals, int len);
+	void SetMaterial(std::string &matName, std::string &textureName);
 
 	void RemoveObject(std::string name);
 	void SwitchedCamera(std::string& name);
@@ -28,6 +30,7 @@ public:
 	std::unordered_map <std::string, double*> transformMap;
 	std::vector<std::string> removeNames;
 	std::unordered_map <std::string, float*> camMap;
+	std::unordered_map <std::string,materialTemp> matMap;
 
 	void Reset();
 };
