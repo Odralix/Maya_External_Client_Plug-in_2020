@@ -83,12 +83,19 @@ void MayaBatchOutput::SetMaterial(std::string & matName, float * vals, int len)
 	{
 		delete[] matMap[matName].colors;
 	}
+	else
+	{
+		//If a material is changed several times within one sending, 
+		//we only need to count it once
+		//The same is unnecesary in the texture version. 
+		//Since it would be impossible to switch a texture manually within the timeframe.
+		m_MasterHead.matCount++;
+	}
 	matMap[matName].colors = new float[len];
 	matMap[matName].numFloats = len;
 	for (int i = 0; i < len; i++)
 	{
 		matMap[matName].colors[i] = vals[i];
-		m_MasterHead.matCount++;
 	}
 }
 
@@ -96,6 +103,17 @@ void MayaBatchOutput::SetMaterial(std::string & matName, std::string& textureNam
 {
 	matMap[matName].name = textureName;
 	m_MasterHead.matCount++;
+}
+
+void MayaBatchOutput::SetMatSwitched(std::string & meshName, std::string matName)
+{
+	if (matSwitchedMap.find(meshName) == matSwitchedMap.end())
+	{
+		//If a material is changed several times within one sending, 
+		//we only need to count it once
+		m_MasterHead.matSwitchedCount++;
+	}
+	matSwitchedMap[meshName] = matName;
 }
 
 
@@ -130,6 +148,7 @@ void MayaBatchOutput::Reset()
 	m_MasterHead.transformCount = 0;
 	m_MasterHead.removedCount = 0;
 	m_MasterHead.matCount = 0;
+	m_MasterHead.matSwitchedCount = 0;
 	removeNames.clear();
 	for (const auto& nr : transformMap)
 	{
@@ -147,4 +166,5 @@ void MayaBatchOutput::Reset()
 	transformMap.clear();
 	meshMap.clear();
 	matMap.clear();
+	matSwitchedMap.clear();
 }

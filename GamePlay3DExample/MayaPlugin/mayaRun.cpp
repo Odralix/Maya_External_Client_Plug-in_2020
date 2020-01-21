@@ -108,6 +108,7 @@ void SendMaterial(MObject &node)
 	MPlug ambColPlug;
 	MFnDependencyNode funcMat(node);
 
+	cout << "Name: " << funcMat.name() << endl;
 	colPlug = funcMat.findPlug("color", true, &status);
 	ambColPlug = funcMat.findPlug("ambc", true, &status);
 	cout << colPlug.name() << endl;
@@ -131,7 +132,30 @@ void SendMaterial(MObject &node)
 				cout << "plugName: " << ftn.name().asChar() << endl;
 				ftn.getValue(textureName);
 				cout << textureName << endl;
-				batch.SetMaterial((std::string)funcMat.name().asChar(), (std::string)textureName.asChar());
+				if (textureName != "")
+				{
+					batch.SetMaterial((std::string)funcMat.name().asChar(), (std::string)textureName.asChar());
+				}
+				else
+				{
+					MColor color;
+					for (int j = 0; j < colPlug.numChildren(); j++)
+					{
+						/*cout << colPlug.child(j).name().asChar() << endl;*/
+						colPlug.child(j, &status).getValue(color[j]);
+					}
+
+					cout << "R: " << color.r << endl;
+					cout << "G: " << color.g << endl;
+					cout << "B: " << color.b << endl;
+
+					float rgb[3];
+					rgb[0] = color.r;
+					rgb[1] = color.g;
+					rgb[2] = color.b;
+
+					batch.SetMaterial((std::string)funcMat.name().asChar(), rgb, 3);
+				}
 			}
 		}
 	}
@@ -157,16 +181,16 @@ void SendMaterial(MObject &node)
 		/*cout << "A: " << color.a << endl;*/
 	}
 
-	MColor color;
-	for (int j = 0; j < ambColPlug.numChildren(); j++)
-	{
-		cout << ambColPlug.child(j).name().asChar() << endl;
-		ambColPlug.child(j, &status).getValue(color[j]);
-	}
+	//MColor color;
+	//for (int j = 0; j < ambColPlug.numChildren(); j++)
+	//{
+	//	cout << ambColPlug.child(j).name().asChar() << endl;
+	//	ambColPlug.child(j, &status).getValue(color[j]);
+	//}
 
-	cout << "ambcR: " << color.r << endl;
-	cout << "ambcG: " << color.g << endl;
-	cout << "ambcB: " << color.b << endl;
+	//cout << "ambcR: " << color.r << endl;
+	//cout << "ambcG: " << color.g << endl;
+	//cout << "ambcB: " << color.b << endl;
 }
 
 // Must be sent with node as a mesh that is already in the MayaBatchOutput.
@@ -215,9 +239,67 @@ void SendMaterialName(MObject &node)
 				MObject handle = dagSearch.parent(0);
 				MFnDagNode parent(handle);
 
-				batch.meshMap[(std::string)parent.name().asChar()].SetMatName(funcMat.name().asChar(), funcMat.name().length());
+				batch.SetMatSwitched((std::string)parent.name().asChar(), (std::string) funcMat.name().asChar());
+				//batch.meshMap[(std::string)parent.name().asChar()].SetMatName(funcMat.name().asChar(), funcMat.name().length());
 			}
 		}
+	}
+}
+
+void SendMaterialNameMatInput(MObject &node)
+{
+	MFnDependencyNode mat(node);
+	cout << "ENTERED MATERIAL NAME INPUT" << endl;
+	cout << mat.name() << endl;
+
+	MPlugArray arr;
+	mat.findPlug("oc").connectedTo(arr, false, true);
+
+	if (arr.length() != 0)
+	{
+		cout << arr.length() << endl;
+		cout << "Entered" << endl;
+		for (int i = 0; i < arr.length(); i++)
+		{
+			MFnDependencyNode shadingGroup(arr[i].node());
+
+			MPlug dagSetMembers;
+			dagSetMembers = shadingGroup.findPlug("dsm");
+
+			//cout << "Numchildren: " << dagSetMembers.numChildren() << endl;
+			//cout << "NumElements: " << dagSetMembers.numElements() << endl;
+			for (int j = 0; j < dagSetMembers.numElements(); j++)
+			{
+				MPlugArray meshPlugs;
+				dagSetMembers[j].connectedTo(meshPlugs, true, false);
+				MFnDependencyNode mesh(meshPlugs[0].node());
+
+				MFnDagNode dagSearch(meshPlugs[0].node());
+				MObject handle = dagSearch.parent(0);
+				MFnDagNode parent(handle);
+
+				batch.SetMatSwitched((std::string)parent.name().asChar(), (std::string) mat.name().asChar());
+				//batch.SetMatSwitched()
+				//cout << parent.name() << endl;
+			}
+		}
+
+		/*shadingGroup.findPlug("dagSetMembers", &status);*/
+
+		//if (status == MS::kSuccess)
+		//{
+		//	cout << "Found DagSetMembers!" << endl;
+		//}
+
+		/*cout << "NUMBER DAGSETMEMBERS: " << << endl;*/
+
+		//MPlugArray meshPlugs;
+		//dagSetMembers.connectedTo(meshPlugs, true, false);
+		//for (int i = 0; i < meshPlugs.length(); i++)
+		//{
+		//	MFnDependencyNode mesh(meshPlugs[i].node());
+		//	cout << mesh.name() << endl;
+		//}
 	}
 }
 
@@ -606,8 +688,7 @@ void nodeMeshAttributeChanged(MNodeMessage::AttributeMessage msg, MPlug &plug, M
 	else if ((msg & MNodeMessage::kConnectionMade) && (plug.partialName() == "iog"))
 	{
 		//New connection was made in the Inst Obj Groups. Most likely it's a material change.
-
-		/*SendMaterialName(plug.node());*/
+		SendMaterialName(plug.node());
 
 		/*SetupMaterials(plug.node());*/
 		//MPlugArray connects;
@@ -620,7 +701,7 @@ void nodeMeshAttributeChanged(MNodeMessage::AttributeMessage msg, MPlug &plug, M
 
 void matChanged(MNodeMessage::AttributeMessage msg, MPlug &plug, MPlug &otherPlug, void* x)
 {
-	 /*cout << plug.name() << ": " << plug.partialName() << endl;*/
+	/* cout << plug.name() << ": " << plug.partialName() << endl;*/
 	 //cout << "message:" << endl;
 	 //cout << msg << endl;
 	 //cout << plug.node().apiTypeStr() << endl;
@@ -630,6 +711,10 @@ void matChanged(MNodeMessage::AttributeMessage msg, MPlug &plug, MPlug &otherPlu
 		 //One of the attributes such as color or transparency has been set.
 		 if (plug.partialName() == "c")
 		 {
+			 SendMaterial(plug.node());
+			 SendMaterialNameMatInput(plug.node());
+			 /*MFnDependencyNode mat(plug.node());*/
+			 /*SendMaterialName()*/
 			 cout << "color changed" << endl;
 			 cout << "____" << endl;
 		 }
@@ -639,7 +724,8 @@ void matChanged(MNodeMessage::AttributeMessage msg, MPlug &plug, MPlug &otherPlu
 		 if (plug.partialName() == "c")
 		 {
 			 //Something was plugged into the color plug, most likely a texture.
-			 //TODO: use to determine when a texture is connected and thusly shader switches from colour to texture in viewer
+			 SendMaterial(plug.node());
+			 SendMaterialNameMatInput(plug.node());
 			 cout << "connection MADE" << endl;
 			 cout << "____" << endl;
 		 }
@@ -649,7 +735,8 @@ void matChanged(MNodeMessage::AttributeMessage msg, MPlug &plug, MPlug &otherPlu
 		 if (plug.partialName() == "c")
 		 {
 			 //Something was unplugged from the color plug, most likely a texture.
-			 //TODO: use to determine when a texture is disconnected and thusly shader switches from texture to color in viewer
+			 SendMaterial(plug.node());
+			 SendMaterialNameMatInput(plug.node());
 			 cout << "connection Broken" << endl;
 			 cout << "____" << endl;
 		 }
@@ -676,6 +763,8 @@ void textureChanged(MNodeMessage::AttributeMessage msg, MPlug &plug, MPlug &othe
 		MFnDependencyNode matNode(matPlugs[0].node());
 		plug.getValue(texName);
 		cout << "Texture changed for Material "<< matNode.name().asChar() <<" to " << texName << endl;
+		SendMaterial(matPlugs[0].node());
+		SendMaterialNameMatInput(matPlugs[0].node());
 	}
 
 }
@@ -747,6 +836,7 @@ void nodeAdded(MObject &node, void * clientData)
 	}
 	else if (node.hasFn(MFn::kShadingEngine))
 	{
+		SendMaterial(lastAddedNode);
 		callbackIdArray.append(MNodeMessage::addAttributeChangedCallback(lastAddedNode, matChanged, NULL, &status));
 	/*	MFnDependencyNode theNode(node);*/
 		//MObjectArray shaders;
@@ -800,7 +890,9 @@ void timerCallback(float elapsedTime, float lastTime, void *clientData)
 	//	cout << "CAM WAS CHANGED" << endl;
 	//}
 
-	if ((batch.GetMasterHeader()->meshCount != 0) || (batch.GetMasterHeader()->transformCount != 0) || batch.GetMasterHeader()->removedCount != 0 || batch.GetMasterHeader()->camSwitched)
+	if ((batch.GetMasterHeader()->meshCount != 0) || (batch.GetMasterHeader()->transformCount != 0) 
+		|| batch.GetMasterHeader()->removedCount != 0 || batch.GetMasterHeader()->camSwitched 
+		|| batch.GetMasterHeader()->matCount !=0 || batch.matSwitchedMap.size() != 0)
 	{
 		producer.send(batch.GetMasterHeader(), sizeof(MasterHeader));
 		/*cout<< "Mesh Count: " << batch.GetMasterHeader()->meshCount << endl;
@@ -833,24 +925,40 @@ void timerCallback(float elapsedTime, float lastTime, void *clientData)
 			MatHeader head;
 			cout << "Material Name: " << mat.first << endl;
 			//this allows program to crash if name is too long. That's silly.
-			for (int i = 0; i < mat.first.length(); i++)
-			{
-				head.matName[i] = mat.first.at(i);
-			}
+			//for (int i = 0; i < mat.first.length(); i++)
+			//{
+			//	head.matName[i] = mat.first.at(i);
+			//}
 			if (mat.second.name != "")
 			{
+				cout << "Sending mat: " << mat.first << endl;
+				cout << "With texture: " << mat.second.name << endl;
 				head.isTextured = true;
-				for (int i = 0; i < mat.second.name.length(); i++)
-				{
-					head.textureName[i] = mat.second.name.at(i);
-				}
-				cout << "Texture Name: " << head.textureName << endl;
+				head.lenMatName = mat.first.length();
+				head.lenTextureName = mat.second.name.length();
+				producer.send(&head, sizeof(head));
+
+				producer.send(mat.first.c_str(), mat.first.length());
+				producer.send(mat.second.name.c_str(), mat.second.name.length());
+				//for (int i = 0; i < mat.second.name.length(); i++)
+				//{
+				//	head.textureName[i] = mat.second.name.at(i);
+				//}
+				//cout << "Texture Name: " << head.textureName << endl;
 				//Allows me to use just one message but at what cost?
 				/*producer.send(&head, sizeof(MatHeader));*/
 			}
 			else
 			{
-				
+				head.isTextured = false;
+				head.lenMatName = mat.first.length();
+				head.lenTextureName = mat.second.name.length();
+				producer.send(&head, sizeof(head));
+
+				producer.send(mat.first.c_str(), mat.first.length());
+				producer.send(mat.second.colors, mat.second.numFloats*sizeof(float));
+
+				cout << "Sending" << endl;
 				for (int i = 0; i < mat.second.numFloats; i++)
 				{
 					cout << "c" << i << ": " << mat.second.colors[i] << endl;
@@ -876,13 +984,13 @@ void timerCallback(float elapsedTime, float lastTime, void *clientData)
 
 			//There's a more efficent way to handle the material name.
 			//This is a temporary mesure that while functional is hard to follow and generally unnecesarily complex.
-			string tmpString;
-			tmpString.resize(nr.second.GetMatLen());
-			for (int i = 0; i < tmpString.length(); i++)
-			{
-				tmpString[i] = nr.second.GetMatName()[i];
-			}
-			cout << "Material name: " << tmpString << endl;
+			//string tmpString;
+			//tmpString.resize(nr.second.GetMatLen());
+			//for (int i = 0; i < tmpString.length(); i++)
+			//{
+			//	tmpString[i] = nr.second.GetMatName()[i];
+			//}
+			//cout << "Material name: " << tmpString << endl;
 
 			/*for (int i = 0; i < meshHead.indexCount; i++)
 			{
@@ -902,6 +1010,22 @@ void timerCallback(float elapsedTime, float lastTime, void *clientData)
 			producer.send(&meshHead, sizeof(MeshHeader));
 			producer.send(nr.second.GetIndicies(), meshHead.indexCount * sizeof(int));
 			producer.send(nr.second.GetVerts(), meshHead.nrOfVerts * 8 * sizeof(float));
+		}
+
+		cout<<"SWITCHED COUNT: " << batch.GetMasterHeader()->matSwitchedCount << endl;
+
+		for (const auto& nr : batch.matSwitchedMap)
+		{
+			cout << "Mesh: " << nr.first << endl;
+			cout << "Switched material to: " << nr.second << endl;
+			MatSwitchedHeader lengths;
+
+			lengths.lenMeshName = nr.first.length();
+			lengths.lenMatName = nr.second.length();
+
+			producer.send(&lengths, sizeof(lengths));
+			producer.send(nr.first.c_str(), nr.first.length());
+			producer.send(nr.second.c_str(), nr.second.length());
 		}
 
 		for (const auto& it2 : batch.transformMap)
@@ -1043,6 +1167,7 @@ void addCallbacksToExistingNodes()
 			MObject Mnode = iterator.thisNode();
 			//Batching already existing meshes for the viewer.
 			SendMesh(Mnode);
+			SendMaterialName(Mnode);
 
 			callbackIdArray.append(MNodeMessage::addAttributeChangedCallback(iterator.thisNode(), nodeMeshAttributeChanged, NULL, &status));
 		}

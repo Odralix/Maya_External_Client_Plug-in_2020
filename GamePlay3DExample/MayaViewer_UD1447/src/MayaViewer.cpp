@@ -436,43 +436,65 @@ void MayaViewer::msgDirector()
 
 	if (head.matCount != 0)
 	{
-		MatHeader mHead;
-		size_t matSize = sizeof(MatHeader);
-		consumer.recv((char*)&mHead, matSize);
-
-		std::string mName = mHead.matName;
-		std::string texName = mHead.textureName;
-
-		Material * mat;
-
-		if (mHead.isTextured == true)
+		for (int i = 0; i < head.matCount; i++)
 		{
-			mat = gameplay::Material::create("res/shaders/textured.vert", "res/shaders/textured.frag", "POINT_LIGHT_COUNT 1");
+			MatHeader mHead;
+			size_t matSize = sizeof(MatHeader);
+			consumer.recv((char*)&mHead, matSize);
 
-			Texture::Sampler* sampler;
-			sampler = mat->getParameter("u_diffuseTexture")->setValue(mHead.textureName, true);
-			sampler->setFilterMode(Texture::LINEAR_MIPMAP_LINEAR, Texture::LINEAR);
+			Material *mat;
+
+			//std::string mName = mHead.matName;
+			//std::string texName = mHead.textureName;
+
+			//Get the materialName
+			char* nMatGet = new char[mHead.lenMatName];
+			consumer.recv(nMatGet, matSize);
+			std::string matName(nMatGet, mHead.lenMatName);
+
+			delete[] nMatGet;
+
+			if (mHead.isTextured == true)
+			{
+				//Allocate memory for the name and then read it from memory.
+				char* nTexGet = new char[mHead.lenTextureName];
+				consumer.recv(nTexGet, matSize);
+
+				//Constructing the name into a string for easier handling.
+				std::string texName(nTexGet, mHead.lenTextureName);
+
+				delete[] nTexGet;
+
+				mat = gameplay::Material::create("res/shaders/textured.vert", "res/shaders/textured.frag", "POINT_LIGHT_COUNT 1");
+				Texture::Sampler* sampler;
+				sampler = mat->getParameter("u_diffuseTexture")->setValue(texName.c_str(), true);
+				sampler->setFilterMode(Texture::LINEAR_MIPMAP_LINEAR, Texture::LINEAR);
+			}
+			else
+			{
+				mat = gameplay::Material::create("res/shaders/colored.vert", "res/shaders/colored.frag", "POINT_LIGHT_COUNT 1");
+				float rgb[3];
+				consumer.recv((char*)rgb, matSize);
+				mat->getParameter("u_diffuseColor")->setValue(Vector4(rgb[0], rgb[1], rgb[2], 0.0f));
+				colMatMap[matName][0] = rgb[0];
+				colMatMap[matName][1] = rgb[1];
+				colMatMap[matName][2] = rgb[2];
+			}
+
+			mat->setParameterAutoBinding("u_worldViewProjectionMatrix", "WORLD_VIEW_PROJECTION_MATRIX");
+			mat->setParameterAutoBinding("u_inverseTransposeWorldViewMatrix", "INVERSE_TRANSPOSE_WORLD_VIEW_MATRIX");
+			mat->getParameter("u_ambientColor")->setValue(Vector3(0.1f, 0.1f, 0.2f));
+			mat->getParameter("u_pointLightColor[0]")->setValue(_scene->findNode("light")->getLight()->getColor());
+			mat->getParameter("u_pointLightPosition[0]")->bindValue(_scene->findNode("light"), &Node::getTranslationWorld);
+			mat->getParameter("u_pointLightRangeInverse[0]")->bindValue(_scene->findNode("light")->getLight(), &Light::getRangeInverse);
+
+			mat->getStateBlock()->setCullFace(true);
+			mat->getStateBlock()->setDepthTest(true);
+			mat->getStateBlock()->setDepthWrite(true);
+
+			materialMap[matName] = mat;
 		}
-		else
-		{
-			mat = gameplay::Material::create("colored/shaders/textured.vert", "colored/shaders/textured.frag", "POINT_LIGHT_COUNT 1");
-			mat->getParameter("u_diffuseColor")->setValue(Vector3(1.0, 0.0f, 0.0f));
-		}
-
-		mat->setParameterAutoBinding("u_worldViewProjectionMatrix", "WORLD_VIEW_PROJECTION_MATRIX");
-		mat->setParameterAutoBinding("u_inverseTransposeWorldViewMatrix", "INVERSE_TRANSPOSE_WORLD_VIEW_MATRIX");
-		mat->getParameter("u_ambientColor")->setValue(Vector3(0.1f, 0.1f, 0.2f));
-		mat->getParameter("u_pointLightColor[0]")->setValue(_scene->findNode("light")->getLight()->getColor());
-		mat->getParameter("u_pointLightPosition[0]")->bindValue(_scene->findNode("light"), &Node::getTranslationWorld);
-		mat->getParameter("u_pointLightRangeInverse[0]")->bindValue(_scene->findNode("light")->getLight(), &Light::getRangeInverse);
-
-		mat->getStateBlock()->setCullFace(true);
-		mat->getStateBlock()->setDepthTest(true);
-		mat->getStateBlock()->setDepthWrite(true);
-
-		materialMap[mHead.matName] = mat;
-
-		std::cout << mName << std::endl;
+		//std::cout << mName << std::endl;
 	}
 
 	//If unnecesary since mayaRun already checks
@@ -490,7 +512,7 @@ void MayaViewer::msgDirector()
 			Texture::Sampler* sampler;
 			char nodeName[42] = {};
 			//Move into seperate material function later.
-			mat = mesh->setMaterial("res/shaders/textured.vert", "res/shaders/textured.frag", "POINT_LIGHT_COUNT 1");
+			mat = gameplay::Material::create("res/shaders/textured.vert", "res/shaders/textured.frag", "POINT_LIGHT_COUNT 1");
 			mat->setParameterAutoBinding("u_worldViewProjectionMatrix", "WORLD_VIEW_PROJECTION_MATRIX");
 			mat->setParameterAutoBinding("u_inverseTransposeWorldViewMatrix", "INVERSE_TRANSPOSE_WORLD_VIEW_MATRIX");
 			mat->getParameter("u_ambientColor")->setValue(Vector3(0.1f, 0.1f, 0.2f));
@@ -502,13 +524,97 @@ void MayaViewer::msgDirector()
 			mat->getStateBlock()->setCullFace(true);
 			mat->getStateBlock()->setDepthTest(true);
 			mat->getStateBlock()->setDepthWrite(true);
+			
 
-			//mesh->setMaterial(materialMap["lambert2"]);
+			individualMatMap[(std::string)inMeshArr[i].meshName] = mat;
 
+			Material* mat2;
+			mat2 = gameplay::Material::create("res/shaders/colored.vert", "res/shaders/colored.frag", "POINT_LIGHT_COUNT 1");
+			mat2->getParameter("u_diffuseColor")->setValue(Vector4(1.0f, 1.0f, 1.0f, 0.0f));
+			mat2->setParameterAutoBinding("u_worldViewProjectionMatrix", "WORLD_VIEW_PROJECTION_MATRIX");
+			mat2->setParameterAutoBinding("u_inverseTransposeWorldViewMatrix", "INVERSE_TRANSPOSE_WORLD_VIEW_MATRIX");
+			mat2->getParameter("u_ambientColor")->setValue(Vector3(0.1f, 0.1f, 0.2f));
+			mat2->getParameter("u_pointLightColor[0]")->setValue(_scene->findNode("light")->getLight()->getColor());
+			mat2->getParameter("u_pointLightPosition[0]")->bindValue(_scene->findNode("light"), &Node::getTranslationWorld);
+			mat2->getParameter("u_pointLightRangeInverse[0]")->bindValue(_scene->findNode("light")->getLight(), &Light::getRangeInverse);
+
+			mat2->getStateBlock()->setCullFace(true);
+			mat2->getStateBlock()->setDepthTest(true);
+			mat2->getStateBlock()->setDepthWrite(true);
+
+			individualColMatMap[(std::string)inMeshArr[i].meshName] = mat2;
+
+			/*mesh->setMaterial(materialMap["lambert2"]);*/
+			mesh->setMaterial(mat);
 			sprintf(nodeName, inMeshArr[i].meshName, i);
 			Node* node = _scene->addNode(nodeName);
 			node->setDrawable(mesh);
 			SAFE_RELEASE(mesh);
+		}
+	}
+
+	if (head.matSwitchedCount != 0)
+	{
+		for (int i = 0; i < head.matSwitchedCount; i++)
+		{
+			MatSwitchedHeader mSHead;
+			size_t temp;
+			consumer.recv((char*)&mSHead, temp);
+
+			char* tMeshName = new char[mSHead.lenMeshName];
+			char* tMatName = new char[mSHead.lenMatName];
+
+			consumer.recv(tMeshName, temp);
+			consumer.recv(tMatName, temp);
+
+			std::string meshName(tMeshName, mSHead.lenMeshName);
+			std::string matName(tMatName, mSHead.lenMatName);
+
+			delete[] tMeshName;
+			delete[] tMatName;
+
+			if (_scene->findNode(meshName.c_str()))
+			{
+				/*dynamic_cast<Model*>(_scene->findNode(meshName.c_str())->getDrawable())->setMaterial(materialMap[matName.c_str()]);*/
+				Model* mesh = dynamic_cast<Model*>(_scene->findNode(meshName.c_str())->getDrawable());
+					/*std::cout << mesh->getMaterial() << std::endl;*/
+					/*materialMap[matName.c_str()].*/
+					if (materialMap[matName.c_str()]->getParameter("u_diffuseTexture")->getSampler() != nullptr)
+					{
+						//The new material has a texture
+						const char* path = materialMap[matName.c_str()]->getParameter("u_diffuseTexture")->getSampler()->getTexture()->getPath();
+
+							if (mesh->getMaterial()->getParameter("u_diffuseTexture")->getSampler() != nullptr)
+							{
+								//Previous mat had a texture
+								mesh->getMaterial()->getParameter("u_diffuseTexture")->setValue(path, true);
+							}
+							else
+							{
+								//Previous mat was color
+								individualMatMap[meshName]->getParameter("u_diffuseTexture")->setValue(path, true);
+								mesh->setMaterial(individualMatMap[meshName]);
+							}
+					}
+					else
+					{
+						//The new material is a color.
+						if (mesh->getMaterial()->getParameter("u_diffuseTexture")->getSampler())
+						{
+							//Previous mat had a texture
+							individualColMatMap[meshName]->getParameter("u_diffuseColor")->setValue(Vector4(colMatMap[matName][0], colMatMap[matName][1], colMatMap[matName][2], 0.0f));
+							mesh->setMaterial(individualColMatMap[meshName]);
+						}
+						else
+						{
+							//Previous Mat was a color
+							mesh->getMaterial()->getParameter("u_diffuseColor")->setValue(Vector4(colMatMap[matName][0], colMatMap[matName][1], colMatMap[matName][2], 0.0f));
+						}
+					}
+				_scene->findNode(meshName.c_str())->setDrawable(mesh);
+
+				/*SAFE_RELEASE(mesh);*/
+			}
 		}
 	}
 

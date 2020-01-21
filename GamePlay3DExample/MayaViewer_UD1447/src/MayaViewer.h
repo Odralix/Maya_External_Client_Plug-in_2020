@@ -75,6 +75,15 @@ private:
     bool _wireframe;
 	MeshHeader *inMeshArr;
 	std::unordered_map<std::string, Material*> materialMap;
+	std::unordered_map<std::string, float[3]> colMatMap;
+
+	//Since gameplay3D refuses to let me apply the same material to multiple meshes
+	//I'll have to create one color and one texture material for each individual mesh.
+	//And then apply the values of the above maps that stores actually relevant information.
+	//This is terribly inneficent and I would have prepared to simply re-use the same material*
+	//The strings are the relevant node name.
+	std::unordered_map<std::string, Material*> individualMatMap;
+	std::unordered_map<std::string, Material*> individualColMatMap;
 	//unordered_map MaterialMap;
 };
 

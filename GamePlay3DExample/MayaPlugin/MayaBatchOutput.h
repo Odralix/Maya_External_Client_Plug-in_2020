@@ -20,6 +20,7 @@ public:
 	void SetCamera(float attr[6], std::string Name);
 	void SetMaterial(std::string &matName,float* vals, int len);
 	void SetMaterial(std::string &matName, std::string &textureName);
+	void SetMatSwitched(std::string & meshName, std::string matName);
 
 	void RemoveObject(std::string name);
 	void SwitchedCamera(std::string& name);
@@ -31,6 +32,7 @@ public:
 	std::vector<std::string> removeNames;
 	std::unordered_map <std::string, float*> camMap;
 	std::unordered_map <std::string,materialTemp> matMap;
+	std::unordered_map <std::string, std::string> matSwitchedMap;
 
 	void Reset();
 };
