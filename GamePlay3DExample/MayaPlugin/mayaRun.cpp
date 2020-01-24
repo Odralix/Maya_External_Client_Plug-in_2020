@@ -32,12 +32,12 @@ void SendTransform(MObject transformNode)
 {
 	MFnDependencyNode nameFetch(transformNode);
 
-	/*cout << nameFetch.name() << " Transform changed!" << endl;*/
+	//cout << nameFetch.name() << " Transform changed!" << endl;
 
 	//Local transform
-	MFnTransform getTransform(transformNode);
+	//MFnTransform getTransform(transformNode);
 
-	MMatrix tMat = getTransform.transformation().asMatrix();
+	//MMatrix tMat = getTransform.transformation().asMatrix();
 
 	//Global Transform:
 	MFnDagNode path(transformNode);
@@ -89,7 +89,7 @@ void nodeTransformChanged(MNodeMessage::AttributeMessage msg, MPlug &plug, MPlug
 {
 	MFnDependencyNode nameFetch(plug.node());
 
-	/*cout << "TRANSFORM CALLBACK FOR " << nameFetch.name() << endl;*/
+	cout << "TRANSFORM CALLBACK FOR " << nameFetch.name() << endl;
 
 	if (msg & MNodeMessage::kAttributeSet)
 	{
@@ -768,6 +768,7 @@ void textureChanged(MNodeMessage::AttributeMessage msg, MPlug &plug, MPlug &othe
 	}
 
 }
+
 // Used to help make some callback assignments more general
 // Such as kShading engine which appears for every material whereas the type of the node before varies with material.
 MObject lastAddedNode;
@@ -898,11 +899,6 @@ void timerCallback(float elapsedTime, float lastTime, void *clientData)
 		/*cout<< "Mesh Count: " << batch.GetMasterHeader()->meshCount << endl;
 		cout << "Transform Count " << batch.GetMasterHeader()->transformCount << endl;*/
 
-		if (batch.GetMasterHeader()->camSwitched) 
-		{
-			producer.send(batch.getSwitchedName()->c_str(), batch.getSwitchedName()->length());
-		}
-
 		for (const auto& it1 : batch.camMap)
 		{
 			producer.send(it1.first.c_str(), it1.first.length());
@@ -912,6 +908,12 @@ void timerCallback(float elapsedTime, float lastTime, void *clientData)
 				/*cout << it1.second[i] << endl;*/
 			}
 			producer.send(it1.second, 6 * sizeof(float));
+		}
+
+		if (batch.GetMasterHeader()->camSwitched)
+		{
+			cout << "Sending Switched Camera: " << batch.getSwitchedName()->c_str() << endl;
+			producer.send(batch.getSwitchedName()->c_str(), batch.getSwitchedName()->length());
 		}
 
 		for (int i = 0; i < batch.removeNames.size(); i++)
@@ -1012,7 +1014,7 @@ void timerCallback(float elapsedTime, float lastTime, void *clientData)
 			producer.send(nr.second.GetVerts(), meshHead.nrOfVerts * 8 * sizeof(float));
 		}
 
-		cout<<"SWITCHED COUNT: " << batch.GetMasterHeader()->matSwitchedCount << endl;
+		/*cout<<"SWITCHED COUNT: " << batch.GetMasterHeader()->matSwitchedCount << endl;*/
 
 		for (const auto& nr : batch.matSwitchedMap)
 		{
@@ -1074,16 +1076,215 @@ void viewChangedCB(const MString& str, MObject &node, void* clientData)
 	std::string tmp(parent.name().asChar());
 	batch.SwitchedCamera(tmp);
 }
+
+double camMoveStartPos[3] = { 0.0f };
+double quatStartPos[4] = { 0.0f };
+
+MTransformationMatrix moveStartMatrix;
+MTimer sendCamTimer;
+
 void cameraAttributeChanged(MNodeMessage::AttributeMessage msg, MPlug &plug, MPlug &otherPlug, void* x)
 {
 	if(msg & MNodeMessage::kAttributeSet)
 	{
+		/*cout << "Cam Transform Changed!" << endl;*/
 		MObject transformNode = plug.node();
 
-			if (transformNode.hasFn(MFn::kTransform))
+			//if (transformNode.hasFn(MFn::kTransform))
+			//{
+			//	M3dView view = M3dView::active3dView();
+			//	MMatrix modelView;
+			//	view.modelViewMatrix(modelView);
+			//	MMatrix projection;
+			//	view.projectionMatrix(projection);
+
+			//	MMatrix global = modelView;
+
+			//	const MTransformationMatrix aMat(global);
+
+			//	MVector trans = aMat.getTranslation(MSpace::kWorld, &status);
+			//	double transDouble[3];
+			//	trans.get(transDouble);
+
+			//	double scaleDouble[3];
+			//	aMat.getScale(scaleDouble, MSpace::kWorld);
+
+			//	double quatDouble[4];
+			//	aMat.getRotationQuaternion(quatDouble[0], quatDouble[1], quatDouble[2], quatDouble[3]);
+
+			//	double transform[10];
+
+			//	for (int i = 0; i < 3; i++)
+			//	{
+			//		transform[i] = transDouble[i];
+			//		transform[i + 3] = scaleDouble[i];
+			//	}
+
+			//	for (int i = 6; i < 10; i++)
+			//	{
+			//		transform[i] = quatDouble[i - 6];
+			//	}
+
+			//	int len = 0;
+			//	MFnDependencyNode nameFetch(plug.node());
+			//	const char* name = nameFetch.name().asChar(len);
+
+			//	cout << "SENDING CAMERA TRANSFORM "<< nameFetch.name() << " RIGHT NOW!!" << endl;
+
+			//	TransHeader head;
+			//	for (int i = 0; i < len; i++)
+			//	{
+			//		head.name[i] = name[i];
+			//	}
+
+			//	batch.SetTransform(head, transform);
+			//	//SendTransform(transformNode);
+			//	producer.send(batch.GetMasterHeader(), sizeof(MasterHeader));
+			//	for (const auto& it2 : batch.transformMap)
+			//	{
+			//		cout << it2.first << endl;
+			//		producer.send(it2.first.c_str(), it2.first.length());
+			//		producer.send(it2.second, 10 * sizeof(double));
+			//	}
+			//	batch.Reset();
+			//}
+		if (transformNode.hasFn(MFn::kTransform))
+		{
+			MTimer temp(sendCamTimer);
+			sendCamTimer.endTimer();
+			//A valiant attempt but at making panning realtime but not quite successful.
+			cout << "Timer At: " << sendCamTimer.elapsedTime() << endl;
+			if (sendCamTimer.elapsedTime() < 0.02f)
 			{
-				SendTransform(transformNode);
+				//Continue the timer
+				sendCamTimer = temp;
+
+				MFnDagNode dagNode(plug.node());
+				MDagPath tNodeDag;
+				dagNode.getPath(tNodeDag);
+				MMatrix worldMat = tNodeDag.inclusiveMatrix();
+
+				const MTransformationMatrix aMat(worldMat);
+				MVector trans = aMat.getTranslation(MSpace::kWorld, &status);
+				double tmp[3];
+				trans.get(tmp);
+
+				for (int i = 0; i < 3; i++)
+				{
+					camMoveStartPos[i] = roundf(camMoveStartPos[i] * 1000.0f) / 1000.0f;
+					tmp[i] = roundf(tmp[i] * 1000.0f) / 1000.0f;
+
+					/*cout << "Quat: " << quat[i] << " Start: " << quatStartPos[i] << endl;*/
+				}
+
+				cout << "Checking pos" << endl;
+				for (int i = 0; i < 3; i++)
+				{
+					cout << i << ": " << camMoveStartPos[i] << endl;
+				}
+				cout << "Temp:" << endl;
+				for (int i = 0; i < 3; i++)
+				{
+					cout << i << ": " << tmp[i] << endl;
+				}
+				//Maya has an issue with this callback where it sometimes uses the original position of the camera rather than the location it's at now.
+				//This filters that.
+		/*		cout << "Current Mat:" << endl;
+				cout << aMat.asMatrix() << endl;
+				cout << "Moved Mat:" << endl;
+				cout << moveStartMatrix.asMatrix() << endl;*/
+				double quat[4];
+				aMat.getRotationQuaternion(quat[0], quat[1], quat[2], quat[3]);
+				cout << "Compare" << endl;
+				//Rounding off for inconsequential minor things.
+				for (int i = 0; i < 4; i++)
+				{
+					quat[i] = roundf(quat[i] * 1000.0f) / 1000.0f;
+					quatStartPos[i] = roundf(quatStartPos[i] * 1000.0f) / 1000.0f;
+
+					/*cout << "Quat: " << quat[i] << " Start: " << quatStartPos[i] << endl;*/
+				}
+
+				//for (int i = 0; i < 4; i++)
+				//{
+				//	if (quatStartPos[i] == quat[i])
+				//	{
+
+				//	}
+				//}
+				//quatStartPos
+
+				if (((tmp[0] != camMoveStartPos[0]) && (tmp[1] != camMoveStartPos[1]) && (tmp[2] != camMoveStartPos[2])))
+				{
+					cout << "ENTERED" << endl;
+					SendTransform(transformNode);
+					producer.send(batch.GetMasterHeader(), sizeof(MasterHeader));
+					for (const auto& it2 : batch.transformMap)
+					{
+						/*cout << it2.first << endl;*/
+						producer.send(it2.first.c_str(), it2.first.length());
+						producer.send(it2.second, 10 * sizeof(double));
+					}
+					batch.Reset();
+				}
+				else
+				{
+					cout << "NO ENTRY" << endl;
+				}
+				/*cout << "CLEAR TIMER" << endl;*/
+				/*sendCamTimer.clear();*/
+				/*sendCamTimer.beginTimer();*/
 			}
+			else
+			{
+				//Start the timer over again.
+				sendCamTimer.beginTimer();
+			}
+			//MFnDagNode dagNode(plug.node());
+			//MDagPath tNodeDag;
+			//dagNode.getPath(tNodeDag);
+			//MMatrix worldMat = tNodeDag.inclusiveMatrix();
+
+			//const MTransformationMatrix aMat(worldMat);
+			////MVector trans = aMat.getTranslation(MSpace::kWorld, &status);
+			////double tmp[3];
+			////trans.get(tmp);
+
+			////cout << "Checking pos" << endl;
+			////for (int i = 0; i < 3; i++)
+			////{
+			////	cout << i << ": " << camMoveStartPos[i] << endl;
+			////}
+			////cout << "Temp:" << endl;
+			////for (int i = 0; i < 3; i++)
+			////{
+			////	cout << i << ": " << tmp[i] << endl;
+			////}
+			////Maya has an issue with this callback where it sometimes uses the original position of the camera rather than the location it's at now.
+			////This filters that.
+			//cout << "Current Mat:" << endl;
+			//cout << aMat.asMatrix() << endl;
+			//cout << "Moved Mat:" << endl;
+			//cout << moveStartMatrix.asMatrix() << endl;
+
+			//if (moveStartMatrix.asMatrix().isEquivalent(aMat.asMatrix()))
+			//{
+			//	cout << "ENTERED" << endl;
+			//	SendTransform(transformNode);
+			//	producer.send(batch.GetMasterHeader(), sizeof(MasterHeader));
+			//	for (const auto& it2 : batch.transformMap)
+			//	{
+			//		/*cout << it2.first << endl;*/
+			//		producer.send(it2.first.c_str(), it2.first.length());
+			//		producer.send(it2.second, 10 * sizeof(double));
+			//	}
+			//	batch.Reset();
+			//}
+			//else
+			//{
+			//	cout << "NO ENTRY" << endl;
+			//}
+		}
 	}
 	/* cout << plug.name() << ": " << plug.partialName() << endl;*/
 }
@@ -1114,6 +1315,46 @@ void SendCam(MObject node)
 		cam.horizontalFieldOfView() << ", " <<
 		cam.isOrtho() << endl;*/
 }
+
+void camMoveStart(MObject &node, void *clientData)
+{
+	MFnDagNode dagSearch(node);
+	MObject handle = dagSearch.parent(0);
+	MFnDagNode parent(handle);
+	cout << "____________________________________________________________" << endl;
+	cout << "CAM MOVE START" << endl;
+	cout << "For " << parent.name() << endl;
+	cout << "____________________________________________________________" << endl;
+
+	MDagPath tNodeDag;
+	parent.getPath(tNodeDag);
+	MMatrix worldMat = tNodeDag.inclusiveMatrix();
+
+	const MTransformationMatrix aMat(worldMat);
+
+	/*moveStartMatrix = aMat;*/
+	MVector trans = aMat.getTranslation(MSpace::kWorld, &status);
+	trans.get(camMoveStartPos);
+
+	aMat.getRotationQuaternion(quatStartPos[0], quatStartPos[1], quatStartPos[2], quatStartPos[3]);
+	//for (int i = 0; i < 3; i++)
+	//{
+	//	cout << i << ": " << camMoveStartPos[i] << ", ";
+	//}
+	//cout << endl;
+
+}
+
+void viewPortChanged(MNodeMessage::AttributeMessage msg, MPlug &plug, MPlug &otherPlug, void* x)
+{
+
+}
+
+void gah(const MString &str, void *clientData)
+{
+	cout << "GAH IS CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAALLED" << endl;
+}
+
 //DON'T FORGET Sending initialize info to the viewer should also happen here
 void addCallbacksToExistingNodes()
 {
@@ -1125,20 +1366,7 @@ void addCallbacksToExistingNodes()
 	MItDependencyNodes matIterator(MFn::kLambert); //Most maya materials are based off of lambert.
 	MItDependencyNodes textureIterator(MFn::kFileTexture);
 	/*MItDependencyNodes iterator(MFn::kCameraView)*/
-	cout << "nrOf3DViews: " << M3dView::numberOf3dViews() << endl;
-	M3dView test = M3dView::active3dView();
-	//for (int i = 0; i < M3dView::numberOf3dViews(); i++)
-	//{
-	//	M3dView current;
-	//	M3dView::get3dView(i, current);
 
-	//	callbackIdArray.append(MNodeMessage::addAttributeChangedCallback(, cameraAttributeChanged, NULL, &status));
-	//}
-
-	MDagPath cam;
-	test.getCamera(cam);
-	MFnDagNode node(cam);
-	cout << "Cam Name: " << node.name().asChar() << endl;
 	//From the look of things I'll need to use "MCallbackId MUiMessage:: addCameraChangedCallback". But in order to do that I need the panel names. 
 	//It's either that or something with the M3dView class. Or possibly using the kCameraview to get the imagePlane?
 	// Worst case: https://forums.cgsociety.org/t/get-modelpanel-name-from-m3dview-c-api/1598993
@@ -1177,8 +1405,15 @@ void addCallbacksToExistingNodes()
 
 	while (!iterator2.isDone())
 	{
-		SendTransform(iterator2.thisNode());
-		callbackIdArray.append(MNodeMessage::addAttributeChangedCallback(iterator2.thisNode(), nodeTransformChanged, NULL, &status));
+		MFnDagNode dagSearch(iterator2.thisNode());
+		MObject handle = dagSearch.child(0);
+		MFnDagNode parent(handle);
+
+		if (handle.hasFn(MFn::kCamera) == false)
+		{
+			SendTransform(iterator2.thisNode());
+			callbackIdArray.append(MNodeMessage::addAttributeChangedCallback(iterator2.thisNode(), nodeTransformChanged, NULL, &status));
+		}
 		iterator2.next();
 	}
 
@@ -1192,6 +1427,16 @@ void addCallbacksToExistingNodes()
 		for (int i = 0; i < nrOfPanels; i++)
 		{
 			callbackIdArray.append(MUiMessage::addCameraChangedCallback(modelPanels[i], viewChangedCB, NULL, &status));
+			M3dView view;
+			M3dView::getM3dViewFromModelPanel(modelPanels[i], view);
+
+			//callbackIdArray.append(MNodeMessage::addAttributeChangedCallback(modelPanels[i],))
+			/*MObject a(view);*/
+			/*view.getCamera()*/
+			/*MFnDependencyNode window(view);*/
+			//view.object
+			///*MObject a = (MObject)view;*/
+			/*callbackIdArray.append(MUiMessage::add3dViewPostRenderMsgCallback(modelPanels[i], gah, NULL, &status));*/
 		}
 	}
 
@@ -1201,6 +1446,7 @@ void addCallbacksToExistingNodes()
 		MObject handle = dagSearch.parent(0);
 		MFnDagNode parent(handle);
 
+		/*cout <<"Camera Name: " << dagSearch.name() << endl;*/
 	/*	cout << "HERE" << endl;
 		cout << parent.name().asChar() << endl;
 		cout << dagSearch.name().asChar() << endl;*/
@@ -1208,10 +1454,30 @@ void addCallbacksToExistingNodes()
 		SendCam(camIterator.thisNode());
 
 		callbackIdArray.append(MNodeMessage::addAttributeChangedCallback(handle, cameraAttributeChanged, NULL, &status));
-		/*callbackIdArray.append(MCameraMessage::addBeginManipulationCallback(camIterator.thisNode(), cameraBeginManipCallback, NULL, &status));*/
+		callbackIdArray.append(MCameraMessage::addBeginManipulationCallback(camIterator.thisNode(), camMoveStart, NULL, &status));
 		
 		camIterator.next();
 	}
+
+	cout << "nrOf3DViews: " << M3dView::numberOf3dViews() << endl;
+	M3dView test = M3dView::active3dView();
+	//for (int i = 0; i < M3dView::numberOf3dViews(); i++)
+	//{
+	//	M3dView current;
+	//	M3dView::get3dView(i, current);
+
+	//	callbackIdArray.append(MNodeMessage::addAttributeChangedCallback(, cameraAttributeChanged, NULL, &status));
+	//}
+
+	MDagPath cam;
+	test.getCamera(cam);
+	MFnDagNode node(cam);
+	cout << "Cam Name: " << node.name().asChar() << endl;
+	MObject handle = node.parent(0);
+	MFnDagNode parent(handle);
+
+	cout << "PARENT NAME: " << parent.name() << endl;
+	batch.SwitchedCamera((std::string)parent.name().asChar());
 
 	while (!matIterator.isDone())
 	{	

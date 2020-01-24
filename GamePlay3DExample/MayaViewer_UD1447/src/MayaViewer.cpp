@@ -345,20 +345,6 @@ void MayaViewer::msgDirector()
 	size_t Mlen;
 	consumer.recv((char*)&head, Mlen);
 
-	if (head.camSwitched)
-	{
-		char name[42] = {};
-		consumer.recv(name, Mlen);
-		if (_scene->findNode(name))
-		{
-			_scene->setActiveCamera(_scene->findNode(name)->getCamera());
-		}
-		else
-		{
-			std::cout << name << " CAMERA COULD NOT BE SWITCHED TO AS IT WASN'T FOUND";
-		}
-	}
-
 	if (head.camCount != 0)
 	{
 		size_t nLen;
@@ -409,6 +395,20 @@ void MayaViewer::msgDirector()
 					//Set transform too?
 				}
 			}
+		}
+	}
+
+	if (head.camSwitched)
+	{
+		char name[42] = {};
+		consumer.recv(name, Mlen);
+		if (_scene->findNode(name))
+		{
+			_scene->setActiveCamera(_scene->findNode(name)->getCamera());
+		}
+		else
+		{
+			std::cout << name << " CAMERA COULD NOT BE SWITCHED TO AS IT WASN'T FOUND";
 		}
 	}
 
