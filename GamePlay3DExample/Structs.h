@@ -12,7 +12,7 @@ struct MasterHeader
 	int matSwitchedCount;
 	//int matCount;
 	//Has the viewer switched camera.
-	bool camSwitched;
+	bool camSwitched = false;
 };
 
 enum MsgType

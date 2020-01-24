@@ -1081,7 +1081,6 @@ double camMoveStartPos[3] = { 0.0f };
 double quatStartPos[4] = { 0.0f };
 
 MTransformationMatrix moveStartMatrix;
-MTimer sendCamTimer;
 
 void cameraAttributeChanged(MNodeMessage::AttributeMessage msg, MPlug &plug, MPlug &otherPlug, void* x)
 {
@@ -1150,140 +1149,125 @@ void cameraAttributeChanged(MNodeMessage::AttributeMessage msg, MPlug &plug, MPl
 			//}
 		if (transformNode.hasFn(MFn::kTransform))
 		{
-			MTimer temp(sendCamTimer);
-			sendCamTimer.endTimer();
-			//A valiant attempt but at making panning realtime but not quite successful.
-			cout << "Timer At: " << sendCamTimer.elapsedTime() << endl;
-			if (sendCamTimer.elapsedTime() < 0.02f)
+			MFnDagNode dagNode(plug.node());
+			MDagPath tNodeDag;
+			dagNode.getPath(tNodeDag);
+			MMatrix worldMat = tNodeDag.inclusiveMatrix();
+
+			const MTransformationMatrix aMat(worldMat);
+			MVector trans = aMat.getTranslation(MSpace::kWorld, &status);
+			double tmp[3];
+			trans.get(tmp);
+
+			for (int i = 0; i < 3; i++)
 			{
-				//Continue the timer
-				sendCamTimer = temp;
+				camMoveStartPos[i] = roundf(camMoveStartPos[i] * 1000.0f) / 1000.0f;
+				tmp[i] = roundf(tmp[i] * 1000.0f) / 1000.0f;
 
-				MFnDagNode dagNode(plug.node());
-				MDagPath tNodeDag;
-				dagNode.getPath(tNodeDag);
-				MMatrix worldMat = tNodeDag.inclusiveMatrix();
+				/*cout << "Quat: " << quat[i] << " Start: " << quatStartPos[i] << endl;*/
+			}
 
-				const MTransformationMatrix aMat(worldMat);
-				MVector trans = aMat.getTranslation(MSpace::kWorld, &status);
-				double tmp[3];
-				trans.get(tmp);
+			cout << "Checking pos" << endl;
+			for (int i = 0; i < 3; i++)
+			{
+				cout << i << ": " << camMoveStartPos[i] << endl;
+			}
+			cout << "Temp:" << endl;
+			for (int i = 0; i < 3; i++)
+			{
+				cout << i << ": " << tmp[i] << endl;
+			}
+			//Maya has an issue with this callback where it sometimes uses the original position of the camera rather than the location it's at now.
+			//This filters that.
+	/*		cout << "Current Mat:" << endl;
+			cout << aMat.asMatrix() << endl;
+			cout << "Moved Mat:" << endl;
+			cout << moveStartMatrix.asMatrix() << endl;*/
+			double quat[4];
+			aMat.getRotationQuaternion(quat[0], quat[1], quat[2], quat[3]);
+			cout << "Compare" << endl;
+			//Rounding off for inconsequential minor things.
+			for (int i = 0; i < 4; i++)
+			{
+				quat[i] = roundf(quat[i] * 1000.0f) / 1000.0f;
+				quatStartPos[i] = roundf(quatStartPos[i] * 1000.0f) / 1000.0f;
 
-				for (int i = 0; i < 3; i++)
+				/*cout << "Quat: " << quat[i] << " Start: " << quatStartPos[i] << endl;*/
+			}
+
+			//for (int i = 0; i < 4; i++)
+			//{
+			//	if (quatStartPos[i] == quat[i])
+			//	{
+
+			//	}
+			//}
+			//quatStartPos
+
+			if (((tmp[0] != camMoveStartPos[0]) && (tmp[1] != camMoveStartPos[1]) && (tmp[2] != camMoveStartPos[2])))
+			{
+				cout << "ENTERED" << endl;
+				SendTransform(transformNode);
+				producer.send(batch.GetMasterHeader(), sizeof(MasterHeader));
+				for (const auto& it2 : batch.transformMap)
 				{
-					camMoveStartPos[i] = roundf(camMoveStartPos[i] * 1000.0f) / 1000.0f;
-					tmp[i] = roundf(tmp[i] * 1000.0f) / 1000.0f;
-
-					/*cout << "Quat: " << quat[i] << " Start: " << quatStartPos[i] << endl;*/
+					/*cout << it2.first << endl;*/
+					producer.send(it2.first.c_str(), it2.first.length());
+					producer.send(it2.second, 10 * sizeof(double));
 				}
-
-				cout << "Checking pos" << endl;
-				for (int i = 0; i < 3; i++)
-				{
-					cout << i << ": " << camMoveStartPos[i] << endl;
-				}
-				cout << "Temp:" << endl;
-				for (int i = 0; i < 3; i++)
-				{
-					cout << i << ": " << tmp[i] << endl;
-				}
-				//Maya has an issue with this callback where it sometimes uses the original position of the camera rather than the location it's at now.
-				//This filters that.
-		/*		cout << "Current Mat:" << endl;
-				cout << aMat.asMatrix() << endl;
-				cout << "Moved Mat:" << endl;
-				cout << moveStartMatrix.asMatrix() << endl;*/
-				double quat[4];
-				aMat.getRotationQuaternion(quat[0], quat[1], quat[2], quat[3]);
-				cout << "Compare" << endl;
-				//Rounding off for inconsequential minor things.
-				for (int i = 0; i < 4; i++)
-				{
-					quat[i] = roundf(quat[i] * 1000.0f) / 1000.0f;
-					quatStartPos[i] = roundf(quatStartPos[i] * 1000.0f) / 1000.0f;
-
-					/*cout << "Quat: " << quat[i] << " Start: " << quatStartPos[i] << endl;*/
-				}
-
-				//for (int i = 0; i < 4; i++)
-				//{
-				//	if (quatStartPos[i] == quat[i])
-				//	{
-
-				//	}
-				//}
-				//quatStartPos
-
-				if (((tmp[0] != camMoveStartPos[0]) && (tmp[1] != camMoveStartPos[1]) && (tmp[2] != camMoveStartPos[2])))
-				{
-					cout << "ENTERED" << endl;
-					SendTransform(transformNode);
-					producer.send(batch.GetMasterHeader(), sizeof(MasterHeader));
-					for (const auto& it2 : batch.transformMap)
-					{
-						/*cout << it2.first << endl;*/
-						producer.send(it2.first.c_str(), it2.first.length());
-						producer.send(it2.second, 10 * sizeof(double));
-					}
-					batch.Reset();
-				}
-				else
-				{
-					cout << "NO ENTRY" << endl;
-				}
-				/*cout << "CLEAR TIMER" << endl;*/
-				/*sendCamTimer.clear();*/
-				/*sendCamTimer.beginTimer();*/
+				batch.Reset();
 			}
 			else
 			{
-				//Start the timer over again.
-				sendCamTimer.beginTimer();
+				cout << "NO ENTRY" << endl;
 			}
-			//MFnDagNode dagNode(plug.node());
-			//MDagPath tNodeDag;
-			//dagNode.getPath(tNodeDag);
-			//MMatrix worldMat = tNodeDag.inclusiveMatrix();
+			/*cout << "CLEAR TIMER" << endl;*/
+			/*sendCamTimer.clear();*/
+			/*sendCamTimer.beginTimer();*/
+		//MFnDagNode dagNode(plug.node());
+		//MDagPath tNodeDag;
+		//dagNode.getPath(tNodeDag);
+		//MMatrix worldMat = tNodeDag.inclusiveMatrix();
 
-			//const MTransformationMatrix aMat(worldMat);
-			////MVector trans = aMat.getTranslation(MSpace::kWorld, &status);
-			////double tmp[3];
-			////trans.get(tmp);
+		//const MTransformationMatrix aMat(worldMat);
+		////MVector trans = aMat.getTranslation(MSpace::kWorld, &status);
+		////double tmp[3];
+		////trans.get(tmp);
 
-			////cout << "Checking pos" << endl;
-			////for (int i = 0; i < 3; i++)
-			////{
-			////	cout << i << ": " << camMoveStartPos[i] << endl;
-			////}
-			////cout << "Temp:" << endl;
-			////for (int i = 0; i < 3; i++)
-			////{
-			////	cout << i << ": " << tmp[i] << endl;
-			////}
-			////Maya has an issue with this callback where it sometimes uses the original position of the camera rather than the location it's at now.
-			////This filters that.
-			//cout << "Current Mat:" << endl;
-			//cout << aMat.asMatrix() << endl;
-			//cout << "Moved Mat:" << endl;
-			//cout << moveStartMatrix.asMatrix() << endl;
+		////cout << "Checking pos" << endl;
+		////for (int i = 0; i < 3; i++)
+		////{
+		////	cout << i << ": " << camMoveStartPos[i] << endl;
+		////}
+		////cout << "Temp:" << endl;
+		////for (int i = 0; i < 3; i++)
+		////{
+		////	cout << i << ": " << tmp[i] << endl;
+		////}
+		////Maya has an issue with this callback where it sometimes uses the original position of the camera rather than the location it's at now.
+		////This filters that.
+		//cout << "Current Mat:" << endl;
+		//cout << aMat.asMatrix() << endl;
+		//cout << "Moved Mat:" << endl;
+		//cout << moveStartMatrix.asMatrix() << endl;
 
-			//if (moveStartMatrix.asMatrix().isEquivalent(aMat.asMatrix()))
-			//{
-			//	cout << "ENTERED" << endl;
-			//	SendTransform(transformNode);
-			//	producer.send(batch.GetMasterHeader(), sizeof(MasterHeader));
-			//	for (const auto& it2 : batch.transformMap)
-			//	{
-			//		/*cout << it2.first << endl;*/
-			//		producer.send(it2.first.c_str(), it2.first.length());
-			//		producer.send(it2.second, 10 * sizeof(double));
-			//	}
-			//	batch.Reset();
-			//}
-			//else
-			//{
-			//	cout << "NO ENTRY" << endl;
-			//}
+		//if (moveStartMatrix.asMatrix().isEquivalent(aMat.asMatrix()))
+		//{
+		//	cout << "ENTERED" << endl;
+		//	SendTransform(transformNode);
+		//	producer.send(batch.GetMasterHeader(), sizeof(MasterHeader));
+		//	for (const auto& it2 : batch.transformMap)
+		//	{
+		//		/*cout << it2.first << endl;*/
+		//		producer.send(it2.first.c_str(), it2.first.length());
+		//		producer.send(it2.second, 10 * sizeof(double));
+		//	}
+		//	batch.Reset();
+		//}
+		//else
+		//{
+		//	cout << "NO ENTRY" << endl;
+		//}
 		}
 	}
 	/* cout << plug.name() << ": " << plug.partialName() << endl;*/

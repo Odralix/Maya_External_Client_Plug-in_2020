@@ -343,240 +343,241 @@ void MayaViewer::msgDirector()
 {
 	MasterHeader head;
 	size_t Mlen;
-	consumer.recv((char*)&head, Mlen);
 
-	if (head.camCount != 0)
+	while (consumer.recv((char*)&head, Mlen))
 	{
-		size_t nLen;
-		for (int i = 0; i < head.camCount; i++)
+		if (head.camCount > 0)
 		{
-			char name[42] = {};
-			float camAttr[6];
-			consumer.recv(name, nLen);
-			consumer.recv((char*)camAttr, nLen);
-
-			//Does the Cam already exist?
-			if (_scene->findNode((char*)name))
+			size_t nLen;
+			for (int i = 0; i < head.camCount; i++)
 			{
-				Camera* cam = _scene->findNode((char*)name)->getCamera();
-				//Orthographic or perspective?
-				if (cam->getCameraType() == 2)
+				char name[42] = {};
+				float camAttr[6];
+				consumer.recv(name, nLen);
+				consumer.recv((char*)camAttr, nLen);
+
+				//Does the Cam already exist?
+				if (_scene->findNode((char*)name))
 				{
-					cam->setZoomX(camAttr[1]);
-					cam->setZoomY(camAttr[2]);
-					cam->setAspectRatio(camAttr[3]);
-					cam->setNearPlane(camAttr[4]);
-					cam->setFarPlane(camAttr[5]);
+					Camera* cam = _scene->findNode((char*)name)->getCamera();
+					//Orthographic or perspective?
+					if (cam->getCameraType() == 2)
+					{
+						cam->setZoomX(camAttr[1]);
+						cam->setZoomY(camAttr[2]);
+						cam->setAspectRatio(camAttr[3]);
+						cam->setNearPlane(camAttr[4]);
+						cam->setFarPlane(camAttr[5]);
+					}
+					else
+					{
+						cam->setFieldOfView(camAttr[1]);
+						cam->setAspectRatio(camAttr[3]);
+						cam->setNearPlane(camAttr[4]);
+						cam->setFarPlane(camAttr[5]);
+					}
 				}
 				else
 				{
-					cam->setFieldOfView(camAttr[1]);
-					cam->setAspectRatio(camAttr[3]);
-					cam->setNearPlane(camAttr[4]);
-					cam->setFarPlane(camAttr[5]);
-				}
-			}
-			else
-			{
-				//Orthographic or perspective?
-				if (camAttr[0] == 1)
-				{
-					Camera* cam = Camera::createOrthographic(camAttr[1], camAttr[2], camAttr[3], camAttr[4], camAttr[5]);
-					Node* cameraNode = _scene->addNode(name);
-					cameraNode->setCamera(cam);
-					SAFE_RELEASE(cam);
-				}
-				else
-				{
-					Camera* cam = Camera::createPerspective(camAttr[1], camAttr[3], camAttr[4], camAttr[5]);
-					Node* cameraNode = _scene->addNode(name);
-					cameraNode->setCamera(cam);
-					SAFE_RELEASE(cam);
-					//Set transform too?
+					//Orthographic or perspective?
+					if (camAttr[0] == 1)
+					{
+						Camera* cam = Camera::createOrthographic(camAttr[1], camAttr[2], camAttr[3], camAttr[4], camAttr[5]);
+						Node* cameraNode = _scene->addNode(name);
+						cameraNode->setCamera(cam);
+						SAFE_RELEASE(cam);
+					}
+					else
+					{
+						Camera* cam = Camera::createPerspective(camAttr[1], camAttr[3], camAttr[4], camAttr[5]);
+						Node* cameraNode = _scene->addNode(name);
+						cameraNode->setCamera(cam);
+						SAFE_RELEASE(cam);
+						//Set transform too?
+					}
 				}
 			}
 		}
-	}
 
-	if (head.camSwitched)
-	{
-		char name[42] = {};
-		consumer.recv(name, Mlen);
-		if (_scene->findNode(name))
-		{
-			_scene->setActiveCamera(_scene->findNode(name)->getCamera());
-		}
-		else
-		{
-			std::cout << name << " CAMERA COULD NOT BE SWITCHED TO AS IT WASN'T FOUND";
-		}
-	}
-
-	//Should be moved to last in case transform calls make it in.
-	if (head.removedCount != 0)
-	{
-		size_t nLen;
-
-		for (int i = 0; i < head.removedCount; i++)
+		if (head.camSwitched)
 		{
 			char name[42] = {};
-
-			consumer.recv(name, nLen);
-			//Without this if the program could crash for attempting to find non-existent nodes.
+			consumer.recv(name, Mlen);
 			if (_scene->findNode(name))
 			{
-				_scene->removeNode(_scene->findNode(name));
+				_scene->setActiveCamera(_scene->findNode(name)->getCamera());
 			}
 			else
 			{
-				std::cout << name << " COULD NOT BE DELETED AS IT WASN'T FOUND";
+				std::cout << name << " CAMERA COULD NOT BE SWITCHED TO AS IT WASN'T FOUND";
 			}
 		}
-	}
 
-	if (head.matCount != 0)
-	{
-		for (int i = 0; i < head.matCount; i++)
+		//Should be moved to last in case transform calls make it in.
+		if (head.removedCount > 0)
 		{
-			MatHeader mHead;
-			size_t matSize = sizeof(MatHeader);
-			consumer.recv((char*)&mHead, matSize);
+			size_t nLen;
 
-			Material *mat;
-
-			//std::string mName = mHead.matName;
-			//std::string texName = mHead.textureName;
-
-			//Get the materialName
-			char* nMatGet = new char[mHead.lenMatName];
-			consumer.recv(nMatGet, matSize);
-			std::string matName(nMatGet, mHead.lenMatName);
-
-			delete[] nMatGet;
-
-			if (mHead.isTextured == true)
+			for (int i = 0; i < head.removedCount; i++)
 			{
-				//Allocate memory for the name and then read it from memory.
-				char* nTexGet = new char[mHead.lenTextureName];
-				consumer.recv(nTexGet, matSize);
+				char name[42] = {};
 
-				//Constructing the name into a string for easier handling.
-				std::string texName(nTexGet, mHead.lenTextureName);
+				consumer.recv(name, nLen);
+				//Without this if the program could crash for attempting to find non-existent nodes.
+				if (_scene->findNode(name))
+				{
+					_scene->removeNode(_scene->findNode(name));
+				}
+				else
+				{
+					std::cout << name << " COULD NOT BE DELETED AS IT WASN'T FOUND";
+				}
+			}
+		}
 
-				delete[] nTexGet;
+		if (head.matCount > 0)
+		{
+			for (int i = 0; i < head.matCount; i++)
+			{
+				MatHeader mHead;
+				size_t matSize = sizeof(MatHeader);
+				consumer.recv((char*)&mHead, matSize);
 
-				mat = gameplay::Material::create("res/shaders/textured.vert", "res/shaders/textured.frag", "POINT_LIGHT_COUNT 1");
+				Material *mat;
+
+				//std::string mName = mHead.matName;
+				//std::string texName = mHead.textureName;
+
+				//Get the materialName
+				char* nMatGet = new char[mHead.lenMatName];
+				consumer.recv(nMatGet, matSize);
+				std::string matName(nMatGet, mHead.lenMatName);
+
+				delete[] nMatGet;
+
+				if (mHead.isTextured == true)
+				{
+					//Allocate memory for the name and then read it from memory.
+					char* nTexGet = new char[mHead.lenTextureName];
+					consumer.recv(nTexGet, matSize);
+
+					//Constructing the name into a string for easier handling.
+					std::string texName(nTexGet, mHead.lenTextureName);
+
+					delete[] nTexGet;
+
+					mat = gameplay::Material::create("res/shaders/textured.vert", "res/shaders/textured.frag", "POINT_LIGHT_COUNT 1");
+					Texture::Sampler* sampler;
+					sampler = mat->getParameter("u_diffuseTexture")->setValue(texName.c_str(), true);
+					sampler->setFilterMode(Texture::LINEAR_MIPMAP_LINEAR, Texture::LINEAR);
+				}
+				else
+				{
+					mat = gameplay::Material::create("res/shaders/colored.vert", "res/shaders/colored.frag", "POINT_LIGHT_COUNT 1");
+					float rgb[3];
+					consumer.recv((char*)rgb, matSize);
+					mat->getParameter("u_diffuseColor")->setValue(Vector4(rgb[0], rgb[1], rgb[2], 0.0f));
+					colMatMap[matName][0] = rgb[0];
+					colMatMap[matName][1] = rgb[1];
+					colMatMap[matName][2] = rgb[2];
+				}
+
+				mat->setParameterAutoBinding("u_worldViewProjectionMatrix", "WORLD_VIEW_PROJECTION_MATRIX");
+				mat->setParameterAutoBinding("u_inverseTransposeWorldViewMatrix", "INVERSE_TRANSPOSE_WORLD_VIEW_MATRIX");
+				mat->getParameter("u_ambientColor")->setValue(Vector3(0.1f, 0.1f, 0.2f));
+				mat->getParameter("u_pointLightColor[0]")->setValue(_scene->findNode("light")->getLight()->getColor());
+				mat->getParameter("u_pointLightPosition[0]")->bindValue(_scene->findNode("light"), &Node::getTranslationWorld);
+				mat->getParameter("u_pointLightRangeInverse[0]")->bindValue(_scene->findNode("light")->getLight(), &Light::getRangeInverse);
+
+				mat->getStateBlock()->setCullFace(true);
+				mat->getStateBlock()->setDepthTest(true);
+				mat->getStateBlock()->setDepthWrite(true);
+
+				materialMap[matName] = mat;
+			}
+			//std::cout << mName << std::endl;
+		}
+
+		//If unnecesary since mayaRun already checks
+		if (head.meshCount > 0)
+		{
+			delete[] inMeshArr;
+			inMeshArr = new MeshHeader[head.meshCount];
+
+			for (int i = 0; i < head.meshCount; i++)
+			{
+				inMeshArr[i] = readHeader();
+				Model *mesh = Model::create(setupInputMesh(inMeshArr[i]));
+
+				Material * mat;
 				Texture::Sampler* sampler;
-				sampler = mat->getParameter("u_diffuseTexture")->setValue(texName.c_str(), true);
+				char nodeName[42] = {};
+				//Move into seperate material function later.
+				mat = gameplay::Material::create("res/shaders/textured.vert", "res/shaders/textured.frag", "POINT_LIGHT_COUNT 1");
+				mat->setParameterAutoBinding("u_worldViewProjectionMatrix", "WORLD_VIEW_PROJECTION_MATRIX");
+				mat->setParameterAutoBinding("u_inverseTransposeWorldViewMatrix", "INVERSE_TRANSPOSE_WORLD_VIEW_MATRIX");
+				mat->getParameter("u_ambientColor")->setValue(Vector3(0.1f, 0.1f, 0.2f));
+				mat->getParameter("u_pointLightColor[0]")->setValue(_scene->findNode("light")->getLight()->getColor());
+				mat->getParameter("u_pointLightPosition[0]")->bindValue(_scene->findNode("light"), &Node::getTranslationWorld);
+				mat->getParameter("u_pointLightRangeInverse[0]")->bindValue(_scene->findNode("light")->getLight(), &Light::getRangeInverse);
+				sampler = mat->getParameter("u_diffuseTexture")->setValue("res/png/crate.png", true);
 				sampler->setFilterMode(Texture::LINEAR_MIPMAP_LINEAR, Texture::LINEAR);
+				mat->getStateBlock()->setCullFace(true);
+				mat->getStateBlock()->setDepthTest(true);
+				mat->getStateBlock()->setDepthWrite(true);
+
+
+				individualMatMap[(std::string)inMeshArr[i].meshName] = mat;
+
+				Material* mat2;
+				mat2 = gameplay::Material::create("res/shaders/colored.vert", "res/shaders/colored.frag", "POINT_LIGHT_COUNT 1");
+				mat2->getParameter("u_diffuseColor")->setValue(Vector4(1.0f, 1.0f, 1.0f, 0.0f));
+				mat2->setParameterAutoBinding("u_worldViewProjectionMatrix", "WORLD_VIEW_PROJECTION_MATRIX");
+				mat2->setParameterAutoBinding("u_inverseTransposeWorldViewMatrix", "INVERSE_TRANSPOSE_WORLD_VIEW_MATRIX");
+				mat2->getParameter("u_ambientColor")->setValue(Vector3(0.1f, 0.1f, 0.2f));
+				mat2->getParameter("u_pointLightColor[0]")->setValue(_scene->findNode("light")->getLight()->getColor());
+				mat2->getParameter("u_pointLightPosition[0]")->bindValue(_scene->findNode("light"), &Node::getTranslationWorld);
+				mat2->getParameter("u_pointLightRangeInverse[0]")->bindValue(_scene->findNode("light")->getLight(), &Light::getRangeInverse);
+
+				mat2->getStateBlock()->setCullFace(true);
+				mat2->getStateBlock()->setDepthTest(true);
+				mat2->getStateBlock()->setDepthWrite(true);
+
+				individualColMatMap[(std::string)inMeshArr[i].meshName] = mat2;
+
+				/*mesh->setMaterial(materialMap["lambert2"]);*/
+				mesh->setMaterial(mat);
+				sprintf(nodeName, inMeshArr[i].meshName, i);
+				Node* node = _scene->addNode(nodeName);
+				node->setDrawable(mesh);
+				SAFE_RELEASE(mesh);
 			}
-			else
-			{
-				mat = gameplay::Material::create("res/shaders/colored.vert", "res/shaders/colored.frag", "POINT_LIGHT_COUNT 1");
-				float rgb[3];
-				consumer.recv((char*)rgb, matSize);
-				mat->getParameter("u_diffuseColor")->setValue(Vector4(rgb[0], rgb[1], rgb[2], 0.0f));
-				colMatMap[matName][0] = rgb[0];
-				colMatMap[matName][1] = rgb[1];
-				colMatMap[matName][2] = rgb[2];
-			}
-
-			mat->setParameterAutoBinding("u_worldViewProjectionMatrix", "WORLD_VIEW_PROJECTION_MATRIX");
-			mat->setParameterAutoBinding("u_inverseTransposeWorldViewMatrix", "INVERSE_TRANSPOSE_WORLD_VIEW_MATRIX");
-			mat->getParameter("u_ambientColor")->setValue(Vector3(0.1f, 0.1f, 0.2f));
-			mat->getParameter("u_pointLightColor[0]")->setValue(_scene->findNode("light")->getLight()->getColor());
-			mat->getParameter("u_pointLightPosition[0]")->bindValue(_scene->findNode("light"), &Node::getTranslationWorld);
-			mat->getParameter("u_pointLightRangeInverse[0]")->bindValue(_scene->findNode("light")->getLight(), &Light::getRangeInverse);
-
-			mat->getStateBlock()->setCullFace(true);
-			mat->getStateBlock()->setDepthTest(true);
-			mat->getStateBlock()->setDepthWrite(true);
-
-			materialMap[matName] = mat;
 		}
-		//std::cout << mName << std::endl;
-	}
 
-	//If unnecesary since mayaRun already checks
-	if (head.meshCount != 0)
-	{
-		delete[] inMeshArr;
-		inMeshArr = new MeshHeader[head.meshCount];
-
-		for (int i = 0; i < head.meshCount; i++)
+		if (head.matSwitchedCount > 0)
 		{
-			inMeshArr[i] = readHeader();
-			Model *mesh = Model::create(setupInputMesh(inMeshArr[i]));
-
-			Material * mat;
-			Texture::Sampler* sampler;
-			char nodeName[42] = {};
-			//Move into seperate material function later.
-			mat = gameplay::Material::create("res/shaders/textured.vert", "res/shaders/textured.frag", "POINT_LIGHT_COUNT 1");
-			mat->setParameterAutoBinding("u_worldViewProjectionMatrix", "WORLD_VIEW_PROJECTION_MATRIX");
-			mat->setParameterAutoBinding("u_inverseTransposeWorldViewMatrix", "INVERSE_TRANSPOSE_WORLD_VIEW_MATRIX");
-			mat->getParameter("u_ambientColor")->setValue(Vector3(0.1f, 0.1f, 0.2f));
-			mat->getParameter("u_pointLightColor[0]")->setValue(_scene->findNode("light")->getLight()->getColor());
-			mat->getParameter("u_pointLightPosition[0]")->bindValue(_scene->findNode("light"), &Node::getTranslationWorld);
-			mat->getParameter("u_pointLightRangeInverse[0]")->bindValue(_scene->findNode("light")->getLight(), &Light::getRangeInverse);
-			sampler = mat->getParameter("u_diffuseTexture")->setValue("res/png/crate.png", true);
-			sampler->setFilterMode(Texture::LINEAR_MIPMAP_LINEAR, Texture::LINEAR);
-			mat->getStateBlock()->setCullFace(true);
-			mat->getStateBlock()->setDepthTest(true);
-			mat->getStateBlock()->setDepthWrite(true);
-			
-
-			individualMatMap[(std::string)inMeshArr[i].meshName] = mat;
-
-			Material* mat2;
-			mat2 = gameplay::Material::create("res/shaders/colored.vert", "res/shaders/colored.frag", "POINT_LIGHT_COUNT 1");
-			mat2->getParameter("u_diffuseColor")->setValue(Vector4(1.0f, 1.0f, 1.0f, 0.0f));
-			mat2->setParameterAutoBinding("u_worldViewProjectionMatrix", "WORLD_VIEW_PROJECTION_MATRIX");
-			mat2->setParameterAutoBinding("u_inverseTransposeWorldViewMatrix", "INVERSE_TRANSPOSE_WORLD_VIEW_MATRIX");
-			mat2->getParameter("u_ambientColor")->setValue(Vector3(0.1f, 0.1f, 0.2f));
-			mat2->getParameter("u_pointLightColor[0]")->setValue(_scene->findNode("light")->getLight()->getColor());
-			mat2->getParameter("u_pointLightPosition[0]")->bindValue(_scene->findNode("light"), &Node::getTranslationWorld);
-			mat2->getParameter("u_pointLightRangeInverse[0]")->bindValue(_scene->findNode("light")->getLight(), &Light::getRangeInverse);
-
-			mat2->getStateBlock()->setCullFace(true);
-			mat2->getStateBlock()->setDepthTest(true);
-			mat2->getStateBlock()->setDepthWrite(true);
-
-			individualColMatMap[(std::string)inMeshArr[i].meshName] = mat2;
-
-			/*mesh->setMaterial(materialMap["lambert2"]);*/
-			mesh->setMaterial(mat);
-			sprintf(nodeName, inMeshArr[i].meshName, i);
-			Node* node = _scene->addNode(nodeName);
-			node->setDrawable(mesh);
-			SAFE_RELEASE(mesh);
-		}
-	}
-
-	if (head.matSwitchedCount != 0)
-	{
-		for (int i = 0; i < head.matSwitchedCount; i++)
-		{
-			MatSwitchedHeader mSHead;
-			size_t temp;
-			consumer.recv((char*)&mSHead, temp);
-
-			char* tMeshName = new char[mSHead.lenMeshName];
-			char* tMatName = new char[mSHead.lenMatName];
-
-			consumer.recv(tMeshName, temp);
-			consumer.recv(tMatName, temp);
-
-			std::string meshName(tMeshName, mSHead.lenMeshName);
-			std::string matName(tMatName, mSHead.lenMatName);
-
-			delete[] tMeshName;
-			delete[] tMatName;
-
-			if (_scene->findNode(meshName.c_str()))
+			for (int i = 0; i < head.matSwitchedCount; i++)
 			{
-				/*dynamic_cast<Model*>(_scene->findNode(meshName.c_str())->getDrawable())->setMaterial(materialMap[matName.c_str()]);*/
-				Model* mesh = dynamic_cast<Model*>(_scene->findNode(meshName.c_str())->getDrawable());
+				MatSwitchedHeader mSHead;
+				size_t temp;
+				consumer.recv((char*)&mSHead, temp);
+
+				char* tMeshName = new char[mSHead.lenMeshName];
+				char* tMatName = new char[mSHead.lenMatName];
+
+				consumer.recv(tMeshName, temp);
+				consumer.recv(tMatName, temp);
+
+				std::string meshName(tMeshName, mSHead.lenMeshName);
+				std::string matName(tMatName, mSHead.lenMatName);
+
+				delete[] tMeshName;
+				delete[] tMatName;
+
+				if (_scene->findNode(meshName.c_str()))
+				{
+					/*dynamic_cast<Model*>(_scene->findNode(meshName.c_str())->getDrawable())->setMaterial(materialMap[matName.c_str()]);*/
+					Model* mesh = dynamic_cast<Model*>(_scene->findNode(meshName.c_str())->getDrawable());
 					/*std::cout << mesh->getMaterial() << std::endl;*/
 					/*materialMap[matName.c_str()].*/
 					if (materialMap[matName.c_str()]->getParameter("u_diffuseTexture")->getSampler() != nullptr)
@@ -584,17 +585,17 @@ void MayaViewer::msgDirector()
 						//The new material has a texture
 						const char* path = materialMap[matName.c_str()]->getParameter("u_diffuseTexture")->getSampler()->getTexture()->getPath();
 
-							if (mesh->getMaterial()->getParameter("u_diffuseTexture")->getSampler() != nullptr)
-							{
-								//Previous mat had a texture
-								mesh->getMaterial()->getParameter("u_diffuseTexture")->setValue(path, true);
-							}
-							else
-							{
-								//Previous mat was color
-								individualMatMap[meshName]->getParameter("u_diffuseTexture")->setValue(path, true);
-								mesh->setMaterial(individualMatMap[meshName]);
-							}
+						if (mesh->getMaterial()->getParameter("u_diffuseTexture")->getSampler() != nullptr)
+						{
+							//Previous mat had a texture
+							mesh->getMaterial()->getParameter("u_diffuseTexture")->setValue(path, true);
+						}
+						else
+						{
+							//Previous mat was color
+							individualMatMap[meshName]->getParameter("u_diffuseTexture")->setValue(path, true);
+							mesh->setMaterial(individualMatMap[meshName]);
+						}
 					}
 					else
 					{
@@ -611,29 +612,28 @@ void MayaViewer::msgDirector()
 							mesh->getMaterial()->getParameter("u_diffuseColor")->setValue(Vector4(colMatMap[matName][0], colMatMap[matName][1], colMatMap[matName][2], 0.0f));
 						}
 					}
-				_scene->findNode(meshName.c_str())->setDrawable(mesh);
+					_scene->findNode(meshName.c_str())->setDrawable(mesh);
 
-				/*SAFE_RELEASE(mesh);*/
+					/*SAFE_RELEASE(mesh);*/
+				}
+			}
+		}
+
+		if (head.transformCount > 0)
+		{
+			size_t nameLength;
+			double transform[10];
+			size_t tLen = sizeof(transform);
+
+			for (int i = 0; i < head.transformCount; i++)
+			{
+				char name[42] = "0";
+				consumer.recv(name, nameLength);
+				consumer.recv((char*)transform, tLen);
+				applyTransformation(name, transform);
 			}
 		}
 	}
-
-	if (head.transformCount != 0)
-	{
-		size_t nameLength;
-		double transform[10];
-		size_t tLen = sizeof(transform);
-
-		for (int i = 0; i < head.transformCount; i++)
-		{
-			char name[42] = "0";
-			consumer.recv(name, nameLength);
-			consumer.recv((char*)transform, tLen);
-			applyTransformation(name, transform);
-		}
-	}
-
-
 
 	//int a=0;
 	//size_t hSize = sizeof(int);

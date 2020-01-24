@@ -204,10 +204,14 @@ bool ComLib::recv(char * msg, size_t & length)
 	//As such it has to wait if they are in the same location as the producer may still be writing.
 	if (offset == *headCheck)
 	{
-		do
+		//Would stop here
+		mData = temp;
+		success = false;
+		return success;
+		/*do
 		{
 			memcpy_s(headCheck, sizeof(int), temp, sizeof(int));
-		} while (offset == *headCheck);
+		} while (offset == *headCheck);*/
 	}
 
 	// Read the length of the incoming message.
@@ -220,10 +224,13 @@ bool ComLib::recv(char * msg, size_t & length)
 		// Current position + length of the message + the size of the message header which is a size_t.
 		if ((offset + len + sizeof(size_t)) > *headCheck)
 		{
-			do
+			mData = temp;
+			success = false;
+			return success;
+			/*do
 			{
 				memcpy_s(headCheck, sizeof(int), temp, sizeof(int));
-			} while (((offset + len + sizeof(size_t)) > *headCheck) && offset < *headCheck);
+			} while (((offset + len + sizeof(size_t)) > *headCheck) && offset < *headCheck);*/
 		}
 	}
 
@@ -250,7 +257,7 @@ bool ComLib::recv(char * msg, size_t & length)
 
 		// We should still return false when there's not enough space.
 		// This however makes a correctly sent if reset message return false which is not optimal.
-		return false;
+		return true;
 	}
 	else
 	{
