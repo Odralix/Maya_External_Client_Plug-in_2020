@@ -1062,8 +1062,8 @@ void timerCallback(float elapsedTime, float lastTime, void *clientData)
 			producer.send(&len, sizeof(int));
 			//Send the name:
 			producer.send(zoomIt.first.c_str(), zoomIt.first.length());
-			//Send the value:
-			producer.send(&zoomIt.second, sizeof(float));
+			//Send the values:
+			producer.send(zoomIt.second, sizeof(float)*2);
 		}
 
 		cout << "Sent nr: " << nrOfTransformsSent << endl;
@@ -1110,7 +1110,7 @@ MTransformationMatrix moveStartMatrix;
 
 void cameraAttributeChanged(MNodeMessage::AttributeMessage msg, MPlug &plug, MPlug &otherPlug, void* x)
 {
-	//cout << plug.name() << ":" << plug.partialName() << endl;
+	cout << plug.name() << ":" << plug.partialName() << endl;
 	if(msg & MNodeMessage::kAttributeSet)
 	{
 		/*cout << "Cam Transform Changed!" << endl;*/
@@ -1229,8 +1229,21 @@ void SendCam(MObject node)
 	float arr[6];
 
 	arr[0] = cam.isOrtho();
-	arr[1] = cam.horizontalFieldOfView() *(180 / 3.14159265359);
-	arr[2] = cam.verticalFieldOfView()*(180 / 3.14159265359);
+	if (cam.isOrtho())
+	{
+		arr[1] = cam.orthoWidth();
+		// [1][1] in an orthographic projection matrix = 2/top - bottom. 
+		// In mayas case this result is also negated.
+		// As such we can extract the height of the projection matrix using simple equation.
+		// 2/height = [1][1] -> 2/[1][1] = height.
+		arr[2] = 2/cam.projectionMatrix()[1][1];
+		/*cout << "HEIGHT HERE: " <<cam.projectionMatrix()[2][2] << endl;*/
+	}
+	else
+	{
+		arr[1] = cam.horizontalFieldOfView() *(180 / 3.14159265359);
+		arr[2] = cam.verticalFieldOfView()*(180 / 3.14159265359);
+	}
 	arr[3] = cam.aspectRatio();
 	arr[4] = cam.nearClippingPlane();
 	arr[5] = cam.farClippingPlane();
@@ -1298,8 +1311,15 @@ void zoomies(MNodeMessage::AttributeMessage msg, MPlug &plug, MPlug &otherPlug, 
 		MFnDagNode parent(handle);
 
 		MFnCamera cam(plug.node());
-		float width = cam.orthoWidth();
-		batch.SetCamOrthoZoom((string)parent.name().asChar(), width);
+		float size[2];
+		size[0] = cam.orthoWidth();
+		// [1][1] in an orthographic projection matrix = 2/top - bottom. 
+		// In mayas case this result is also negated.
+		// As such we can extract the height of the projection matrix using simple equation.
+		// 2/height = [1][1] -> 2/[1][1] = height.
+		size[1] = 2 / cam.projectionMatrix()[1][1];
+
+		batch.SetCamOrthoZoom((string)parent.name().asChar(), size);
 		cout << "The heck: " << cam.orthoWidth() << endl;
 		cout << "Horizontal: " << cam.horizontalFieldOfView() *(180 / 3.14159265359) << endl;
 		cout << "Vertical: " << cam.verticalFieldOfView()*(180 / 3.14159265359) << endl;
@@ -1409,6 +1429,9 @@ void addCallbacksToExistingNodes()
 		callbackIdArray.append(MCameraMessage::addBeginManipulationCallback(camIterator.thisNode(), camMoveStart, NULL, &status));
 		callbackIdArray.append(MNodeMessage::addAttributeChangedCallback(camIterator.thisNode(), zoomies, NULL, &status));
 		
+		//Trick the transform callback into triggering so all cameras start at correct positions in viewer.
+		SendTransform(handle);
+
 		camIterator.next();
 	}
 

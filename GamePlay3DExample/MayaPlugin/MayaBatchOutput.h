@@ -21,7 +21,7 @@ public:
 	void SetMaterial(std::string &matName,float* vals, int len);
 	void SetMaterial(std::string &matName, std::string &textureName);
 	void SetMatSwitched(std::string & meshName, std::string matName);
-	void SetCamOrthoZoom(std::string & camName, float & zoom);
+	void SetCamOrthoZoom(std::string & camName, float zoom[2]);
 
 	void RemoveObject(std::string name);
 	void SwitchedCamera(std::string& name);
@@ -34,7 +34,7 @@ public:
 	std::unordered_map <std::string, float*> camMap;
 	std::unordered_map <std::string,materialTemp> matMap;
 	std::unordered_map <std::string, std::string> matSwitchedMap;
-	std::unordered_map <std::string, float> orthoZoomMap;
+	std::unordered_map <std::string, float[2]> orthoZoomMap;
 
 	void Reset();
 };

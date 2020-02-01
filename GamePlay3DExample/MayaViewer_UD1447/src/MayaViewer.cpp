@@ -659,16 +659,16 @@ void MayaViewer::msgDirector()
 			consumer.recv((char*)&len, zLen);
 			char* tmpName = new char[len];
 			consumer.recv(tmpName, zLen);
-			float zoomX;
-			consumer.recv((char*)&zoomX, zLen);
+			float zoom[2];
+			consumer.recv((char*)zoom, zLen);
 
 			std::string camName(tmpName,len);
 
 			if (_scene->findNode(camName.c_str()))
 			{
 				Camera* cam = _scene->findNode(camName.c_str())->getCamera();
-				cam->setZoomY(zoomX);
-				cam->setZoomX(zoomX);
+				cam->setZoomX(zoom[0]);
+				cam->setZoomY(zoom[1]);
 			}
 			delete[] tmpName;
 		}

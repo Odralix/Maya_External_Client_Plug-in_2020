@@ -116,9 +116,10 @@ void MayaBatchOutput::SetMatSwitched(std::string & meshName, std::string matName
 	matSwitchedMap[meshName] = matName;
 }
 
-void MayaBatchOutput::SetCamOrthoZoom(std::string & camName, float & zoom)
+void MayaBatchOutput::SetCamOrthoZoom(std::string & camName, float zoom[2])
 {
-	orthoZoomMap[camName] = zoom;
+	orthoZoomMap[camName][0] = zoom[0];
+	orthoZoomMap[camName][1] = zoom[1];
 	m_MasterHead.zoomCount++;
 }
 
