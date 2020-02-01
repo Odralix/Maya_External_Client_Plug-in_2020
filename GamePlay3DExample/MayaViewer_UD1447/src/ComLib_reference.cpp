@@ -1,5 +1,7 @@
 //Author: Ossian Edström
 
+//Author: Ossian Edström
+
 #include "ComLib_reference.h"
 
 ComLib::ComLib(const std::string & secret, const size_t & buffSize, ClientType type)
@@ -11,7 +13,7 @@ ComLib::ComLib(const std::string & secret, const size_t & buffSize, ClientType t
 
 	myBuffSize = buffSize;
 
-	offset = sizeof(int)*2; //~~ Change to *2 later since we want to start after head and tail.
+	offset = sizeof(int) * 2; //~~ Change to *2 later since we want to start after head and tail.
 
 	firstRun = true;
 
@@ -24,7 +26,7 @@ ComLib::ComLib(const std::string & secret, const size_t & buffSize, ClientType t
 		PAGE_READWRITE,		  // Read/write access
 		(DWORD)0,			  // maximum object size (High DWORD)
 		buffSize,			  // maximum object size (Low DWORD) Add 64 to allow for writing several different datatypes at end of buffer if neccesary.
-		(LPCWSTR) mySecret.c_str());	  // name of the object
+		(LPCWSTR)mySecret.c_str());	  // name of the object
 
 	//From the Docs:
 	//The names of event, semaphore, mutex, waitable timer, job, and file mapping objects share the same namespace.
@@ -54,8 +56,8 @@ ComLib::ComLib(const std::string & secret, const size_t & buffSize, ClientType t
 	//    of the File map.
 	mData = MapViewOfFile(hFileMap, // Handle
 		FILE_MAP_ALL_ACCESS,		// Read/Write permission
-		0, 
-		0, 
+		0,
+		0,
 		0);//Buffer size??
 
 	// IMPORTANT: https://docs.microsoft.com/sv-se/windows/win32/memory/creating-named-shared-memory
@@ -98,7 +100,7 @@ bool ComLib::send(const void * msg, const size_t length)
 	{
 		// Current position + length of the message + the size of the message header which is a size_t.
 		if ((offset + length + sizeof(length)) >= *tailCheck)
-		{ 
+		{
 			do
 			{
 				memcpy_s(tailCheck, sizeof(int), ((char*)temp + sizeof(int)), sizeof(int));
@@ -128,7 +130,7 @@ bool ComLib::send(const void * msg, const size_t length)
 		memcpy_s(mData, sizeof(size_t), &size, sizeof(size_t));
 
 		// Head and tail lay in the front of the buffer. Messages should start after.
-		offset = sizeof(int)*2;
+		offset = sizeof(int) * 2;
 		mData = temp;
 
 		//Actually send the message that couldn't be fit into the buffer:
@@ -196,7 +198,7 @@ bool ComLib::recv(char * msg, size_t & length)
 		do
 		{
 			memcpy_s(headCheck, sizeof(int), temp, sizeof(int));
-		} while (*headCheck == 0 || *headCheck == 8 );
+		} while (*headCheck == 0 || *headCheck == 8);
 	}
 
 	// Head is NEVER allowed to catch up to the consumer.
@@ -204,14 +206,10 @@ bool ComLib::recv(char * msg, size_t & length)
 	//As such it has to wait if they are in the same location as the producer may still be writing.
 	if (offset == *headCheck)
 	{
-		//Would stop here
-		mData = temp;
-		success = false;
-		return success;
-		/*do
+		do
 		{
 			memcpy_s(headCheck, sizeof(int), temp, sizeof(int));
-		} while (offset == *headCheck);*/
+		} while (offset == *headCheck);
 	}
 
 	// Read the length of the incoming message.
@@ -224,13 +222,10 @@ bool ComLib::recv(char * msg, size_t & length)
 		// Current position + length of the message + the size of the message header which is a size_t.
 		if ((offset + len + sizeof(size_t)) > *headCheck)
 		{
-			mData = temp;
-			success = false;
-			return success;
-			/*do
+			do
 			{
 				memcpy_s(headCheck, sizeof(int), temp, sizeof(int));
-			} while (((offset + len + sizeof(size_t)) > *headCheck) && offset < *headCheck);*/
+			} while (((offset + len + sizeof(size_t)) > *headCheck) && offset < *headCheck);
 		}
 	}
 
@@ -257,7 +252,7 @@ bool ComLib::recv(char * msg, size_t & length)
 
 		// We should still return false when there's not enough space.
 		// This however makes a correctly sent if reset message return false which is not optimal.
-		return true;
+		return false;
 	}
 	else
 	{
@@ -285,21 +280,11 @@ bool ComLib::recv(char * msg, size_t & length)
 
 size_t ComLib::nextSize()
 {
-	// This is never used.
+	void* tmp = static_cast<char*>(mData) + offset;
 
+	size_t len = -1;
+	memcpy_s(&len, sizeof(size_t), tmp, sizeof(size_t));
 
-	//size_t size;
-	//bool msg = false;
-
-	//if(msg)
-	//{
-	//	//size = msgSize;
-	//}
-	//else
-	//{
-	//	size = 0;
-	//}
-	//return size;
-
-	return -1;
+	return len;
 }
+ 

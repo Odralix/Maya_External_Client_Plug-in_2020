@@ -116,6 +116,12 @@ void MayaBatchOutput::SetMatSwitched(std::string & meshName, std::string matName
 	matSwitchedMap[meshName] = matName;
 }
 
+void MayaBatchOutput::SetCamOrthoZoom(std::string & camName, float & zoom)
+{
+	orthoZoomMap[camName] = zoom;
+	m_MasterHead.zoomCount++;
+}
+
 
 void  MayaBatchOutput::RemoveObject(std::string name)
 {
@@ -149,6 +155,7 @@ void MayaBatchOutput::Reset()
 	m_MasterHead.removedCount = 0;
 	m_MasterHead.matCount = 0;
 	m_MasterHead.matSwitchedCount = 0;
+	m_MasterHead.zoomCount = 0;
 	removeNames.clear();
 	for (const auto& nr : transformMap)
 	{
@@ -167,4 +174,5 @@ void MayaBatchOutput::Reset()
 	meshMap.clear();
 	matMap.clear();
 	matSwitchedMap.clear();
+	orthoZoomMap.clear();
 }

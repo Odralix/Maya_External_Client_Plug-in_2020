@@ -338,14 +338,20 @@ MeshHeader MayaViewer::readHeader()
 
 	return mHead;
 }
+MasterHeader prevHead;
+size_t prevOffset;
 
+
+char prevName[42] = {'\0'};
 void MayaViewer::msgDirector()
 {
 	MasterHeader head;
 	size_t Mlen;
 
-	while (consumer.recv((char*)&head, Mlen))
+	while (consumer.nextSize() != 0)
 	{
+		consumer.recv((char*)&head, Mlen);
+		prevOffset = Mlen;
 		if (head.camCount > 0)
 		{
 			size_t nLen;
@@ -507,6 +513,10 @@ void MayaViewer::msgDirector()
 			for (int i = 0; i < head.meshCount; i++)
 			{
 				inMeshArr[i] = readHeader();
+				if (_scene->findNode(inMeshArr[i].meshName))
+				{
+					_scene->removeNode(_scene->findNode(inMeshArr[i].meshName));/*_scene->findNode(inMeshArr[i].meshName)*/
+				}
 				Model *mesh = Model::create(setupInputMesh(inMeshArr[i]));
 
 				Material * mat;
@@ -628,11 +638,42 @@ void MayaViewer::msgDirector()
 			for (int i = 0; i < head.transformCount; i++)
 			{
 				char name[42] = "0";
-				consumer.recv(name, nameLength);
+				bool work = consumer.recv(name, nameLength);
+				for(int i = 0; i < 42; i++)
+				{
+					prevName[i] = name[i];
+				}
+				if (prevName[0] == '0')
+				{
+					std::cout << "Heck";
+				}
 				consumer.recv((char*)transform, tLen);
 				applyTransformation(name, transform);
 			}
 		}
+
+		if (head.zoomCount > 0)
+		{
+			int len;
+			size_t zLen;
+			consumer.recv((char*)&len, zLen);
+			char* tmpName = new char[len];
+			consumer.recv(tmpName, zLen);
+			float zoomX;
+			consumer.recv((char*)&zoomX, zLen);
+
+			std::string camName(tmpName,len);
+
+			if (_scene->findNode(camName.c_str()))
+			{
+				Camera* cam = _scene->findNode(camName.c_str())->getCamera();
+				cam->setZoomY(zoomX);
+				cam->setZoomX(zoomX);
+			}
+			delete[] tmpName;
+		}
+
+		prevHead = head;
 	}
 
 	//int a=0;
