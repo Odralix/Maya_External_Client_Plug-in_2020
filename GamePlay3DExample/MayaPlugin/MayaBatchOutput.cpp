@@ -123,6 +123,24 @@ void MayaBatchOutput::SetCamOrthoZoom(std::string & camName, float zoom[2])
 	m_MasterHead.zoomCount++;
 }
 
+void MayaBatchOutput::SetVert(std::string & meshName, unsigned int vertID, float vertVals[3])
+{
+	if (vertMap.find(meshName) == vertMap.end())
+	{
+		//If a map doesn't exist yet it definitely hasn't been counted yet.
+		m_MasterHead.numVertsChanged++;
+	}
+	//else if (vertMap[meshName].find(vertID) == vertMap[meshName].end())
+	//{
+	//	//Even if the meshName is there it may be a new vertID in which case it must be counted.
+	//	//The map only contains the most recent change so we must only count each vert once.
+	//	m_MasterHead.numVertsChanged++;
+	//}
+	for (int i = 0; i < 3; i++)
+	{
+		vertMap[meshName][vertID][i] = vertVals[i];
+	}
+}
 
 void  MayaBatchOutput::RemoveObject(std::string name)
 {
@@ -157,6 +175,7 @@ void MayaBatchOutput::Reset()
 	m_MasterHead.matCount = 0;
 	m_MasterHead.matSwitchedCount = 0;
 	m_MasterHead.zoomCount = 0;
+	m_MasterHead.numVertsChanged = 0;
 	removeNames.clear();
 	for (const auto& nr : transformMap)
 	{
@@ -170,10 +189,16 @@ void MayaBatchOutput::Reset()
 	{
 		delete[] nr.second.colors;
 	}
+	//The map should have to be cleared internally but I don't have access
+	//for (const auto& nr : vertMap)
+	//{
+	//	nr.second.clear()
+	//}
 	camMap.clear();
 	transformMap.clear();
 	meshMap.clear();
 	matMap.clear();
 	matSwitchedMap.clear();
 	orthoZoomMap.clear();
+	vertMap.clear();
 }

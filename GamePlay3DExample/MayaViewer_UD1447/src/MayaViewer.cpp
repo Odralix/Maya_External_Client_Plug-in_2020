@@ -652,6 +652,37 @@ void MayaViewer::msgDirector()
 			}
 		}
 
+		if (head.numVertsChanged > 0)
+		{
+			for (int i = 0; i < head.numVertsChanged; i++)
+			{
+				int meshNameLen = 0;
+				size_t size = 0;
+				consumer.recv((char*)&meshNameLen, size);
+				char *meshName = new char[meshNameLen-4];
+				consumer.recv(meshName, size);
+
+				Model* mesh = dynamic_cast<Model*>(_scene->findNode(meshName)->getDrawable());
+
+				/*mesh->getMesh()->getVertexBuffer()*/
+				gameplay::VertexBufferHandle a = mesh->getMesh()->getVertexBuffer();
+
+				int nrOfVerts = 0;
+				consumer.recv((char*)&nrOfVerts, size);
+
+				for (int j = 0; j < nrOfVerts; j++)
+				{
+					int vertID = -1;
+					consumer.recv((char*)&vertID, size);
+					float pos[3];
+					consumer.recv((char*)pos, size);
+					const gameplay::VertexFormat::Element bark = mesh->getMesh()->getVertexFormat().getElement(vertID);
+					/*mesh->getMesh()->getVertexFormat().getElement(vertID) = const gameplay::VertexFormat::Element(gameplay::VertexFormat::POSITION,3);*/
+					/*std::cout << pos << std::endl;*/
+				}
+			}
+		}
+
 		if (head.zoomCount > 0)
 		{
 			int len;

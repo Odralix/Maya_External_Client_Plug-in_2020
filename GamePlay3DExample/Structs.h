@@ -11,6 +11,7 @@ struct MasterHeader
 	int matCount;
 	int matSwitchedCount;
 	int zoomCount;
+	int numVertsChanged;
 	//int matCount;
 	//Has the viewer switched camera.
 	bool camSwitched = false;
