@@ -22,7 +22,7 @@ public:
 	void SetMaterial(std::string &matName, std::string &textureName);
 	void SetMatSwitched(std::string & meshName, std::string matName);
 	void SetCamOrthoZoom(std::string & camName, float zoom[2]);
-	void SetVert(std::string & meshName, unsigned int vertID, float vertVals[3]);
+	void SetVert(std::string & meshName, unsigned int vertID, float vertVals[4]);
 
 	void RemoveObject(std::string name);
 	void SwitchedCamera(std::string& name);

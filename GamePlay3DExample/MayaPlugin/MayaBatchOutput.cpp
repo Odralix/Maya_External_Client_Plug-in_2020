@@ -123,7 +123,7 @@ void MayaBatchOutput::SetCamOrthoZoom(std::string & camName, float zoom[2])
 	m_MasterHead.zoomCount++;
 }
 
-void MayaBatchOutput::SetVert(std::string & meshName, unsigned int vertID, float vertVals[3])
+void MayaBatchOutput::SetVert(std::string & meshName, unsigned int vertID, float vertVals[4])
 {
 	if (vertMap.find(meshName) == vertMap.end())
 	{

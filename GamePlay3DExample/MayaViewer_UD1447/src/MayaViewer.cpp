@@ -83,11 +83,11 @@ void MayaViewer::finalize()
 
 void MayaViewer::update(float elapsedTime)
 {
+	_scene->setAmbientColor(0.5, 0.5, 0.5);
 	static float totalTime = 0;
 	totalTime += elapsedTime;
 	float step = 360.0 / float(gModelCount);
 	char name[10] = {};
-
 	//for (int i = 0; i < gModelCount; i++)
 	//{
 	//	sprintf(name, "cube%d", i);
@@ -273,7 +273,7 @@ Mesh * MayaViewer::createImportMesh(float * verts, int* indicies, int vtxNr, int
 		int anInt = indicies[i];
 		std::cout << anInt << std::endl;
 	}
-
+	//here
 	mesh->setVertexData(verts, 0, vtxNr);
 	MeshPart* meshPart = mesh->addPart(Mesh::TRIANGLES, Mesh::INDEX32, indexNr, false);
 	meshPart->setIndexData(indicies, 0, indexNr);
@@ -292,6 +292,8 @@ Mesh * MayaViewer::setupInputMesh(MeshHeader &mHead)
 
 	float * verts = new float[mHead.nrOfVerts * 8];
 	consumer.recv((char*)verts, vertSize);
+
+	vertexRef[mHead.meshName] = verts;
 
 	//size_t a = inSize / sizeof(int);
 
@@ -659,7 +661,11 @@ void MayaViewer::msgDirector()
 				int meshNameLen = 0;
 				size_t size = 0;
 				consumer.recv((char*)&meshNameLen, size);
-				char *meshName = new char[meshNameLen-4];
+				char *meshName = new char[meshNameLen+1];
+				for (int j = 0; j < meshNameLen + 1; j++)
+				{
+					meshName[j] = '\0';
+				}
 				consumer.recv(meshName, size);
 
 				Model* mesh = dynamic_cast<Model*>(_scene->findNode(meshName)->getDrawable());
@@ -670,16 +676,31 @@ void MayaViewer::msgDirector()
 				int nrOfVerts = 0;
 				consumer.recv((char*)&nrOfVerts, size);
 
+				/*float* verts = vertexRef[meshName];*/
+
 				for (int j = 0; j < nrOfVerts; j++)
 				{
 					int vertID = -1;
 					consumer.recv((char*)&vertID, size);
 					float pos[3];
 					consumer.recv((char*)pos, size);
-					const gameplay::VertexFormat::Element bark = mesh->getMesh()->getVertexFormat().getElement(vertID);
+
+					int vertStep = vertID * 8;
+					vertexRef[meshName][vertStep] = pos[0];
+					vertexRef[meshName][vertStep + 1] = pos[1];
+					vertexRef[meshName][vertStep + 2] = pos[2];
+					/*mesh->getMesh()->getVertexFormat().getElement(vertID)*/
+					// As of now I am unable to retrieve the verticies through gameplay3D's interface.
+					// As such I will store the array of float values for my verts seperately when I input them for now.
+					/*mesh->getMesh().*/
+					/*const gameplay::VertexFormat::Element bark = mesh->getMesh()->getVertexFormat().getElement(0);*/
+					/*mesh->getMesh()->getVertexBuffer()*/
+					/*bark[0][0] = 3.0;*/
+					/*unsigned int aaaa = mesh->getMesh()->getVertexFormat().getVertexSize();*/
 					/*mesh->getMesh()->getVertexFormat().getElement(vertID) = const gameplay::VertexFormat::Element(gameplay::VertexFormat::POSITION,3);*/
 					/*std::cout << pos << std::endl;*/
 				}
+				mesh->getMesh()->setVertexData(vertexRef[meshName], 0, mesh->getMesh()->getVertexCount());
 			}
 		}
 

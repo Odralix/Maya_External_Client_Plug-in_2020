@@ -10,6 +10,7 @@
 #include <maya/MCameraMessage.h>
 //#include "../Structs.h"
 #include "MayaBatchOutput.h"
+#include <maya/MItSelectionList.h>
 
 using namespace std;
 MCallbackIdArray callbackIdArray;
@@ -24,9 +25,11 @@ ComLib producer((std::string)"stuff", 100 * 1024 * 1024, ComLib::PRODUCER);
 MString lastName = "0";
 
 // keep track of created meshes to maintain them
-queue<MObject> newMeshes;
 std::map<std::string, int> mapOfVertexArrays;
+std::map<std::string, MCallbackId> deletedCallbackArray;
 MayaBatchOutput batch;
+
+bool isExtruding = false;
 
 void SendTransform(MObject transformNode)
 {
@@ -427,6 +430,12 @@ void SetupMaterials(MObject &node)
 	}
 }
 
+void faceVertMove(MNodeMessage::AttributeMessage msg, MPlug &plug, MPlug &otherPlug, void* x)
+{
+	cout << "ENTERED FACEVERT" << endl;
+	cout << plug.name() << ": " << plug.partialName() << endl;
+}
+
 //For use only on MObjects with a connected MFn::kMesh.
 void SendMesh(MObject Mnode)
 {
@@ -460,6 +469,9 @@ void SendMesh(MObject Mnode)
 		{
 			meshHead.meshName[i] = parent.name().asChar()[i];
 		}
+
+		//In certain cases such as when a mesh is extruded or undo-ed the transform must be sent as well.
+		SendTransform(handle);
 
 		//Getting the Index count
 		MIntArray triCounts;
@@ -497,6 +509,7 @@ void SendMesh(MObject Mnode)
 		MItMeshFaceVertex iterator(Mnode, &status);
 		while (!iterator.isDone())
 		{
+			callbackIdArray.append(MNodeMessage::addAttributeChangedCallback(iterator.currentItem(), faceVertMove, NULL, &status));
 			iterator.position(MSpace::kWorld, &status).get(posArr[i]);
 			iterator.getNormal(normals, MSpace::kObject);
 			float2 temp;
@@ -580,7 +593,7 @@ void SendMesh(MObject Mnode)
 
 void nodeMeshAttributeChanged(MNodeMessage::AttributeMessage msg, MPlug &plug, MPlug &otherPlug, void* x)
 {
-	/* cout << plug.name() << ": " << plug.partialName() << endl;*/
+	 cout << plug.name() << ": " << plug.partialName() << endl;
 
 	// For individually or soft select moved verticies. 
 	if (msg & MNodeMessage::kAttributeSet)
@@ -596,21 +609,45 @@ void nodeMeshAttributeChanged(MNodeMessage::AttributeMessage msg, MPlug &plug, M
 			cout << "In mesh " << parent.name() << endl;
 			cout << plug.partialName() << " Was changed! The vertex values are now: " << endl;
 
-			int index = -1;
+			// As we already have the vertID I feel like the face verticies should be accesable through the control point.
+			// However as MPoint has no such functionality this was the best I could figure out.
+			MItMeshFaceVertex iterator(plug.node(), &status);
+			int count = 0;
+			while (!iterator.isDone())
+			{
+				if (iterator.vertId() == plug.logicalIndex())
+				{
+					float xyz[4] = { 0 };
+					iterator.position(MSpace::kWorld, &status).get(xyz);
+					/*cout << "X: " << xyz[0] << " Y: " << xyz[1] << " Z: " << xyz[2] << endl;*/
+					/*cout << count << endl;*/
 
-			//Extract values.
-			float xyz[3] = { 0 };
-			//float x = 0;
-			//float y = 0;
-			//float z = 0;
-			plug.child(0).getValue(xyz[0]);
-			plug.child(1).getValue(xyz[1]);
-			plug.child(2).getValue(xyz[2]);
+					batch.SetVert((std::string)parent.name().asChar(), count, xyz);
+				}
+				count++;
+				iterator.next();
+			}
 
-			/*producer.send(&z, sizeof(float));*/
+			//iterator.vertId
+			//MPoint pnt;
+			//pnt.
+			/*value(plug.logicalIndex(), pnt);*/
 
-			cout << "X: " << xyz[0] << " Y: " << xyz[1] << " Z: " << xyz[2] << endl;
-			batch.SetVert((std::string)parent.name().asChar(), plug.logicalIndex(), xyz);
+			//int index = -1;
+			///*plug.logicalIndex()*/
+			////Extract values.
+			//float xyz[3] = { 0 };
+			////float x = 0;
+			////float y = 0;
+			////float z = 0;
+			//plug.child(0).getValue(xyz[0]);
+			//plug.child(1).getValue(xyz[1]);
+			//plug.child(2).getValue(xyz[2]);
+
+			///*producer.send(&z, sizeof(float));*/
+
+			//cout << "X: " << xyz[0] << " Y: " << xyz[1] << " Z: " << xyz[2] << endl;
+			/*batch.SetVert((std::string)parent.name().asChar(), plug.logicalIndex(), xyz);*/
 
 		}
 	}
@@ -649,6 +686,125 @@ void nodeMeshAttributeChanged(MNodeMessage::AttributeMessage msg, MPlug &plug, M
 		{
 			SendMesh(Mnode);
 			SendMaterialName(Mnode);
+		}
+		else if (isExtruding == true)
+		{
+			MSelectionList selected;
+			MGlobal::getActiveSelectionList(selected);
+			cout << "------IS EXTRUDING-------" << endl;
+			cout << "Selected length: " << selected.length() << endl;
+
+			MItSelectionList selList(selected);
+
+			MObject obj;
+			MDagPath path;
+			while (!selList.isDone())
+			{
+				selList.getDagPath(path, obj);
+
+				cout << obj.apiTypeStr() << endl;
+				cout << path.fullPathName() << endl;
+				if (obj.hasFn(MFn::kMeshPolygonComponent))
+				{
+					//MItMeshFaceVertex vIt(path, obj);
+					//while (!vIt.isDone())
+					//{
+					//	cout << "Index: " << vIt.faceId() << endl;
+
+					//	vIt.next();
+					//}
+
+					MItMeshPolygon itPoly(path, obj);
+					while (!itPoly.isDone())
+					{
+						MFnMesh mesh(path);
+
+						cout << "Index: " << itPoly.index() << endl;
+						MIntArray Verts;
+						itPoly.getVertices(Verts);
+						/*itPoly.getConnectedVertices(conVerts);*/
+						for (int i = 0; i < Verts.length(); i++)
+						{
+							cout << "Vert Index: " << Verts[i] << endl;
+						}
+
+						//Note, the name is technically the transform and not the mesh.
+						MFnDagNode dagSearch(plug.node());
+						MObject handle = dagSearch.parent(0);
+						MFnDagNode parent(handle);
+
+						// As we already have the vertID I feel like the face verticies should be accesable through the control point.
+						// However as MPoint has no such functionality this was the best I could figure out.
+						/*MItMeshFaceVertex faceVertIt(path,obj, &status);*/
+						MItMeshFaceVertex faceVertIt(plug.node(), &status);
+						int count = 0;
+						bool isNewVert = false;
+						while (!faceVertIt.isDone())
+						{
+							for (int i = 0; i < Verts.length(); i++)
+							{
+								if (faceVertIt.vertId() == Verts[i])
+								{
+									isNewVert = true;
+									break;
+								}
+							}
+
+							if (isNewVert)
+							{
+								float xyz[4] = { 0 };
+								faceVertIt.position(MSpace::kWorld, &status).get(xyz);
+								/*cout << "X: " << xyz[0] << " Y: " << xyz[1] << " Z: " << xyz[2] << endl;*/
+								/*cout << count << endl;*/
+
+								batch.SetVert((std::string)parent.name().asChar(), count, xyz);
+								bool isNewVert = false;
+							}
+							count++;
+							faceVertIt.next();
+						}
+
+						itPoly.next();
+					}
+				}
+
+				selList.next();
+			}
+			//for (int i = 0; i < selected.length(); i++)
+			//{
+			//	cout << "Element Nr: " << i << endl;
+			//	
+			//	MDagPath dagPath;
+			//	MObject obj;
+			//	selected.getDagPath(i, dagPath);
+			//	selected.getDependNode(i, obj);
+
+			//	//if (obj.hasFn(MFn::kMeshPolygonComponent))
+			//	//{
+			//	//	cout << "Objet is polygon" << endl;
+			//	//}
+			//	//MFnDependencyNode fn(path.node());
+			//	//cout << "Object: " << fn.name() << endl;
+			//	//cout << "Component apiStr: " << path.node().apiTypeStr() << endl;
+			//	/*MPlug plug;
+			//	selected.getPlug(1, plug);
+			//	cout << plug.name() << endl;
+
+			//	cout << plug.node().apiTypeStr() << endl;
+
+			//	MItMeshFaceVertex iterator(plug.node(), &status);
+			//	while (!iterator.isDone())
+			//	{
+			//		float positions[4];
+			//		iterator.position(MSpace::kWorld, &status).get(positions);
+			//		cout << "ITERATOR RUN: " << iterator.vertId() << endl;
+			//		iterator.next();
+			//	}*/
+			///*	MFnMesh newVerts(plug.node());
+
+			//	newVerts.*/
+			//}
+
 		}
 		//else
 		//{
@@ -782,6 +938,7 @@ void extrudeChange(MNodeMessage::AttributeMessage msg, MPlug &plug, MPlug &other
 {
 	cout << "EXTRUDE CHANGE ENTER" << endl;
 	cout << plug.name() << ": " << plug.partialName() << endl;
+	isExtruding = true;
 	if (msg & MNodeMessage::kAttributeSet)
 	{
 		cout << "HAH!" << endl;
@@ -841,13 +998,11 @@ void nodeAdded(MObject &node, void * clientData)
 	if (lastName != name)
 	{
 		cout << "Added node: " + name << endl;
-		/*cout << node.apiTypeStr() << endl;*/
+		cout << node.apiTypeStr() << endl;
 	}
 
 	if (node.hasFn(MFn::kMesh))
 	{
-		// Saving the mesh in queue for later.
-		newMeshes.push(node);
 
 		// Creating a map between the mesh and its first vertex array in order to prevent multiple printing.
 		MFnMesh inputMesh(node);
@@ -869,12 +1024,14 @@ void nodeAdded(MObject &node, void * clientData)
 		inputMesh.getPoints(vertexArr);
 		const char* temp = name.asChar();
 		string meshName(temp);
-
-		cout << meshName << endl;
+		cout << "MeshName: "<< meshName << endl;
 		mapOfVertexArrays.insert(std::make_pair(meshName, vertexArr.length()));
 
 		/*callbackIdArray.append(MPolyMessage::addPolyTopologyChangedCallback(node, topologyChanged, NULL, &status));*/
-		callbackIdArray.append(MNodeMessage::addAttributeChangedCallback (node, nodeMeshAttributeChanged, NULL, &status));
+		MCallbackId tempId = MNodeMessage::addAttributeChangedCallback(node, nodeMeshAttributeChanged, NULL, &status);
+		callbackIdArray.append(tempId);
+
+		deletedCallbackArray.insert(std::make_pair(meshName, tempId));
 	}
 	else if (node.hasFn(MFn::kTransform))
 	{
@@ -914,12 +1071,12 @@ void nodeAdded(MObject &node, void * clientData)
 
 	if (latestNode.typeName() == "polyExtrudeFace")
 	{
-		/*callbackIdArray.append(MNodeMessage::addAttributeChangedCallback(node, extrudeChange, NULL, &status));*/
+		callbackIdArray.append(MNodeMessage::addAttributeChangedCallback(node, extrudeChange, NULL, &status));
 	}
-	/*else if (node.hasFn(MFn::kExtrude))
-	{
-		cout << "''''''''''''''''''''''''I was extruded''''''''''''''''''''''''''''''''''''''" << endl;
-	}*/
+	//if (node.hasFn(MFn::kExtrude))
+	//{
+	//	cout << "''''''''''''''''''''''''I was extruded''''''''''''''''''''''''''''''''''''''" << endl;
+	//}
 
 	lastAddedNode = node;
 	lastName = name;
@@ -937,7 +1094,23 @@ void nodeRemoved(MObject &node, void * clientData)
 	}
 
 	//If this is not erased, recreating the object doesn't proc the right processes.
-	mapOfVertexArrays.erase(name.asChar());
+	//UPDATE: It appears using control Z to bring an item back crashes if we erase it here
+
+	// The basic issue is that when a mesh is brought back through control Z it does not proc the attachment of a callback
+	// until after the geometry has re-generated.
+
+	//MMessage::removeCallback(deletedCallbackArray[name.asChar()]);
+	//deletedCallbackArray.erase(name.asChar());
+	//mapOfVertexArrays.erase(name.asChar());
+
+	// As the check for adding a new mesh is based on the length of the mesh array this fixes undo issues.
+	// However it is a temporary fix and has several issues.
+	// (Such as adding every deleted node to the map with 0 without real reason)
+	// The "Correct" way of doing this would technically be to remove the callback for deleted meshes
+	// as well as erase it from the map. However when an undo call is made after a mesh is deleted
+	// It re-generates the geometry before the callback has time to be re-attached.
+	// As such this band-aid solution is used currently.
+	mapOfVertexArrays[name.asChar()] = 0;
 	cout << "Removed node: " + name << endl;
 }
 
@@ -1100,15 +1273,15 @@ void timerCallback(float elapsedTime, float lastTime, void *clientData)
 
 			for (const auto& vertIt : vertMeshIt.second)
 			{
-				cout << "Point ID: " << vertIt.first << endl;
+				/*cout << "Point ID: " << vertIt.first << endl;*/
 				//Send the vertex ID
 				producer.send(&vertIt.first, sizeof(int));
 				//Send the (local) transform coordinates.
 				producer.send(vertIt.second, sizeof(float) * 3);
-				for (int i = 0; i < 3; i++)
-				{
-					cout << i << ": " << vertIt.second[i] << endl;
-				}
+				//for (int i = 0; i < 3; i++)
+				//{
+				//	cout << i << ": " << vertIt.second[i] << endl;
+				//}
 			}
 		}
 
@@ -1357,7 +1530,7 @@ void viewPortChanged(MNodeMessage::AttributeMessage msg, MPlug &plug, MPlug &oth
 
 }
 
-void zoomies(MNodeMessage::AttributeMessage msg, MPlug &plug, MPlug &otherPlug, void* x)
+void zoomCB(MNodeMessage::AttributeMessage msg, MPlug &plug, MPlug &otherPlug, void* x)
 {
 	cout << plug.name() << ":" << plug.partialName() << endl;
 	if (plug.partialName() == "ow")
@@ -1484,7 +1657,7 @@ void addCallbacksToExistingNodes()
 
 		callbackIdArray.append(MNodeMessage::addAttributeChangedCallback(handle, cameraAttributeChanged, NULL, &status));
 		callbackIdArray.append(MCameraMessage::addBeginManipulationCallback(camIterator.thisNode(), camMoveStart, NULL, &status));
-		callbackIdArray.append(MNodeMessage::addAttributeChangedCallback(camIterator.thisNode(), zoomies, NULL, &status));
+		callbackIdArray.append(MNodeMessage::addAttributeChangedCallback(camIterator.thisNode(), zoomCB, NULL, &status));
 		
 		//Trick the transform callback into triggering so all cameras start at correct positions in viewer.
 		SendTransform(handle);
@@ -1530,6 +1703,16 @@ void addCallbacksToExistingNodes()
 	}
 }
 
+void selectionChangedCB(void* x)
+{
+	//Extruding generally ends when the user selects something different.
+	//It is far from an optimal solution and too general but will most likely work.
+	if (isExtruding)
+	{
+		isExtruding = false;
+	}
+	/*cout << "SELECTION CHANGED!" << endl;*/
+}
 /*
  * Plugin entry point
  * For remote control of maya
@@ -1559,6 +1742,8 @@ EXPORT MStatus initializePlugin(MObject obj) {
 	callbackIdArray.append(MDGMessage::addNodeRemovedCallback(nodeRemoved, "dependNode", NULL, &status));
 	callbackIdArray.append(MTimerMessage::addTimerCallback(0.02f, timerCallback, NULL, &status));
 	callbackIdArray.append(MNodeMessage::addNameChangedCallback(MObject::kNullObj, nameChanged, NULL, &status));
+	
+	callbackIdArray.append(MModelMessage::addCallback(MModelMessage::kActiveListModified, selectionChangedCB, NULL, &status));
 
 	addCallbacksToExistingNodes();
 

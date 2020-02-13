@@ -84,6 +84,7 @@ private:
 	//The strings are the relevant node name.
 	std::unordered_map<std::string, Material*> individualMatMap;
 	std::unordered_map<std::string, Material*> individualColMatMap;
+	std::unordered_map<std::string, float*> vertexRef;
 	//unordered_map MaterialMap;
 };
 
