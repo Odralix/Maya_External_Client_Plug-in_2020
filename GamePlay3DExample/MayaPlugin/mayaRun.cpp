@@ -714,55 +714,103 @@ void nodeMeshAttributeChanged(MNodeMessage::AttributeMessage msg, MPlug &plug, M
 					//	vIt.next();
 					//}
 
+					MFnMesh mesh(path);
+
 					MItMeshPolygon itPoly(path, obj);
 					while (!itPoly.isDone())
 					{
-						MFnMesh mesh(path);
 
 						cout << "Index: " << itPoly.index() << endl;
-						MIntArray Verts;
-						itPoly.getVertices(Verts);
+						MIntArray globalVertIds;
+						itPoly.getVertices(globalVertIds);
 						/*itPoly.getConnectedVertices(conVerts);*/
-						for (int i = 0; i < Verts.length(); i++)
-						{
-							cout << "Vert Index: " << Verts[i] << endl;
-						}
 
 						//Note, the name is technically the transform and not the mesh.
 						MFnDagNode dagSearch(plug.node());
 						MObject handle = dagSearch.parent(0);
 						MFnDagNode parent(handle);
 
+						int faceVertexID;
+						MIntArray faceIds;
+						itPoly.getConnectedFaces(faceIds);
+
+						faceIds.append(itPoly.index());
+
+						for (int i = 0; i < faceIds.length(); i++)
+						{
+							for (int j = 0; j < globalVertIds.length(); j++)
+							{
+								/*cout << "Vert Index: " << Verts[i] << endl;*/
+
+								mesh.getFaceVertexBlindDataIndex(faceIds[i], globalVertIds[j], faceVertexID);
+
+								MPoint point;
+								mesh.getPoint(globalVertIds[j], point);
+								float pos[4];
+								point.get(pos);
+
+								batch.SetVert((std::string)parent.name().asChar(), faceVertexID, pos);
+							}
+						}
+
+						/*MItMeshFaceVertex faceVertIt(plug.node(), &status);
+						int prevFace;
+						int prevIndex;*/
+
+						//for (int i = 0; i < faceIds.length(); i++)
+						//{
+						//	cout << "ConFace Index: " << faceIds[i] << endl;
+						//	faceVertIt.setIndex(faceIds[i], 0, prevFace, prevIndex);
+
+						//	float vertPos[4];
+						//	while ((faceVertIt.faceId() == faceIds[i]) && !faceVertIt.isDone())
+						//	{
+						//		faceVertIt.position(MSpace::kWorld, &status).get(vertPos);
+						//		cout << "vertId: " << faceVertIt.vertId() << endl;
+						//		/*batch.SetVert((std::string)parent.name().asChar(), faceVertIt.faceId()*4, vertPos);*/
+						//		faceVertIt.next();
+						//	}
+						//}
+
+						////Note, the name is technically the transform and not the mesh.
+						/*MFnDagNode dagSearch(plug.node());
+						MObject handle = dagSearch.parent(0);
+						MFnDagNode parent(handle);*/
+
 						// As we already have the vertID I feel like the face verticies should be accesable through the control point.
 						// However as MPoint has no such functionality this was the best I could figure out.
 						/*MItMeshFaceVertex faceVertIt(path,obj, &status);*/
-						MItMeshFaceVertex faceVertIt(plug.node(), &status);
-						int count = 0;
-						bool isNewVert = false;
-						while (!faceVertIt.isDone())
-						{
-							for (int i = 0; i < Verts.length(); i++)
-							{
-								if (faceVertIt.vertId() == Verts[i])
-								{
-									isNewVert = true;
-									break;
-								}
-							}
+						//MItMeshFaceVertex faceVertIt(plug.node(), &status);
+						//int count = 0;
+						//bool isNewVert = false;
+						//while (!faceVertIt.isDone())
+						//{
+						//	for (int i = 0; i < Verts.length(); i++)
+						//	{
+						//		if (faceVertIt.vertId() == Verts[i])
+						//		{
+						//			isNewVert = true;
+						//			break;
+						//		}
+						//	}
 
-							if (isNewVert)
-							{
-								float xyz[4] = { 0 };
-								faceVertIt.position(MSpace::kWorld, &status).get(xyz);
-								/*cout << "X: " << xyz[0] << " Y: " << xyz[1] << " Z: " << xyz[2] << endl;*/
-								/*cout << count << endl;*/
+						//	if (isNewVert)
+						//	{
+						//		if ((faceVertIt.faceId() == itPoly.index()))
+						//		{
+						//			cout << "Count = " << count << endl;
+						//		}
+						//		float xyz[4] = { 0 };
+						//		faceVertIt.position(MSpace::kWorld, &status).get(xyz);
+						//		/*cout << "X: " << xyz[0] << " Y: " << xyz[1] << " Z: " << xyz[2] << endl;*/
+						//		/*cout << count << endl;*/
 
-								batch.SetVert((std::string)parent.name().asChar(), count, xyz);
-								bool isNewVert = false;
-							}
-							count++;
-							faceVertIt.next();
-						}
+						//		batch.SetVert((std::string)parent.name().asChar(), count, xyz);
+						//		bool isNewVert = false;
+						//	}
+						//	count++;
+						//	faceVertIt.next();
+						//}
 
 						itPoly.next();
 					}
