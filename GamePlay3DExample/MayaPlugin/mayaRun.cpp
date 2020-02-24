@@ -595,7 +595,7 @@ std::vector<int> changedVerts;
 
 void nodeMeshAttributeChanged(MNodeMessage::AttributeMessage msg, MPlug &plug, MPlug &otherPlug, void* x)
 {
-	/*//cout  << plug.name() << ": " << plug.partialName() << endl;*/
+	cout  << plug.name() << ": " << plug.partialName() << endl;
 
 	// For individually or soft select moved verticies. 
 	if (msg & MNodeMessage::kAttributeSet)
@@ -649,46 +649,6 @@ void nodeMeshAttributeChanged(MNodeMessage::AttributeMessage msg, MPlug &plug, M
 				mesh.getFaceVertexBlindDataIndex(conFaces[i], plug.logicalIndex(), faceVertexId);
 				batch.SetVertPos((std::string)parent.name().asChar(), faceVertexId, pos);
 			}
-			/*mesh.getFaceVertexBlindDataIndex(, plug.logicalIndex(), faceVertexId);*/
-			
-
-			//int count = 0;
-			//while (!iterator.isDone())
-			//{
-			//	if (iterator.vertId() == plug.logicalIndex())
-			//	{
-			//		float xyz[4] = { 0 };
-			//		iterator.position(MSpace::kWorld, &status).get(xyz);
-			//		/*//cout  << "X: " << xyz[0] << " Y: " << xyz[1] << " Z: " << xyz[2] << endl;*/
-			//		/*//cout  << count << endl;*/
-
-			//		batch.SetVert((std::string)parent.name().asChar(), count, xyz);
-			//	}
-			//	count++;
-			//	iterator.next();
-			//}
-
-			//iterator.vertId
-			//MPoint pnt;
-			//pnt.
-			/*value(plug.logicalIndex(), pnt);*/
-
-			//int index = -1;
-			///*plug.logicalIndex()*/
-			////Extract values.
-			//float xyz[3] = { 0 };
-			////float x = 0;
-			////float y = 0;
-			////float z = 0;
-			//plug.child(0).getValue(xyz[0]);
-			//plug.child(1).getValue(xyz[1]);
-			//plug.child(2).getValue(xyz[2]);
-
-			///*producer.send(&z, sizeof(float));*/
-
-			////cout  << "X: " << xyz[0] << " Y: " << xyz[1] << " Z: " << xyz[2] << endl;
-			/*batch.SetVert((std::string)parent.name().asChar(), plug.logicalIndex(), xyz);*/
-
 		}
 	}
 	// For actual changes to topology
@@ -698,15 +658,6 @@ void nodeMeshAttributeChanged(MNodeMessage::AttributeMessage msg, MPlug &plug, M
 		MFnMesh inputMesh(plug.node());
 
 		MObject Mnode = plug.node();
-
-		/*for (int i = 0; i < dagSearch.parentCount(); i++)
-		{
-			MObject parHandle = dagSearch.parent(i);
-
-			MFnDagNode par(parHandle);
-
-			//cout  << par.name().asChar() << endl;
-		}*/
 		//cout  << "entered Topology change" << endl;
 
 		MFloatPointArray vertexArr;
@@ -751,14 +702,6 @@ void nodeMeshAttributeChanged(MNodeMessage::AttributeMessage msg, MPlug &plug, M
 					MItMeshPolygon itPoly(path, obj);
 					while (!itPoly.isDone())
 					{
-
-						////cout  << "Index: " << itPoly.index() << endl;
-
-						//Get an array with each vert for this polygon with GlobalIds
-		/*				MIntArray globalVertIds;
-						itPoly.getVertices(globalVertIds);*/
-						/*itPoly.getConnectedVertices(conVerts);*/
-
 						//Note, the name is technically the transform and not the mesh.
 						MFnDagNode dagSearch(plug.node());
 						MObject handle = dagSearch.parent(0);
@@ -828,51 +771,6 @@ void nodeMeshAttributeChanged(MNodeMessage::AttributeMessage msg, MPlug &plug, M
 				selList.next();
 			}
 		}
-		//else if (isVertChange == true)
-		//{
-		//	//SendMesh(Mnode);
-		//	//SendMaterialName(Mnode);
-
-		//	MFnDagNode dagSearch(plug.node());
-		//	MObject handle = dagSearch.parent(0);
-		//	MFnDagNode parent(handle);
-		//	////cout  << "In mesh " << parent.name() << endl;
-		//	////cout  << plug.partialName() << " Was changed! The vertex values are now: " << endl;
-
-		//	MFnMesh mesh(plug.node());
-		//	int faceVertexId;
-		//	MItMeshVertex vertIt(plug.node());
-
-		//	std::vector<int> faceVerts;
-		//	faceVerts.reserve(changedVerts.size() * 4);
-
-		//	for (int i = 0; i < changedVerts.size(); i++)
-		//	{
-		//		//Note that we don't actually care about the previous index and thus assign it to faceVertexId temporarily.
-		//		vertIt.setIndex(changedVerts[i], faceVertexId);
-
-		//		MIntArray conFaces;
-		//		vertIt.getConnectedFaces(conFaces);
-
-		//		//No need to take the position of each face vert individually as they have identical position.
-		//		MPoint point;
-		//		mesh.getPoint(plug.logicalIndex(), point);
-		//		float pos[4];
-		//		point.get(pos);
-
-		//		//Still need to send the position to the value on each face vert.
-		//		for (int j = 0; j < conFaces.length(); j++)
-		//		{
-		//			mesh.getFaceVertexBlindDataIndex(conFaces[j], changedVerts[i], faceVertexId);
-		//			faceVerts.emplace_back(faceVertexId);
-		//			batch.SetVert((std::string)parent.name().asChar(), faceVertexId, pos);
-		//		}
-		//	}
-
-
-		//	changedVerts.clear();
-		//	isVertChange = false;
-		//}
 	}
 	else if ((msg & MNodeMessage::kConnectionMade) && (plug.partialName() == "iog"))
 	{
@@ -955,43 +853,6 @@ void textureChanged(MNodeMessage::AttributeMessage msg, MPlug &plug, MPlug &othe
 
 }
 
-void extrudeChange(MNodeMessage::AttributeMessage msg, MPlug &plug, MPlug &otherPlug, void* x)
-{
-	//cout  << "EXTRUDE CHANGE ENTER" << endl;
-	//cout  << plug.name() << ": " << plug.partialName() << endl;
-	isExtruding = true;
-	if (msg & MNodeMessage::kAttributeSet)
-	{
-		//cout  << "HAH!" << endl;
-		//MObject transformNode = plug.node();
-
-		//if (plug.isElement())
-		//{
-		//	//cout  << plug.partialName() << " Was changed! The vertex values are now: " << endl;
-		//	MFnMesh inputMesh(plug.node());
-
-		//	int index = -1;
-
-		//	//Extract values.
-		//	float x = 0;
-		//	float y = 0;
-		//	float z = 0;
-
-		//	plug.child(0).getValue(x);
-		//	plug.child(1).getValue(y);
-		//	plug.child(2).getValue(z);
-
-		//	/*producer.send(&z, sizeof(float));*/
-
-		//	//cout  << "X: " << x << " Y: " << y << " Z: " << z << endl;
-		//}
-	}
-	else if (msg & MNodeMessage::kAttributeEval && plug.partialName() == "out")
-	{
-		//cout  << "HOOO!" << endl;
-	}
-}
-
 // Used to help make some callback assignments more general
 // Such as kShading engine which appears for every material whereas the type of the node before varies with material.
 MObject lastAddedNode;
@@ -1018,8 +879,8 @@ void nodeAdded(MObject &node, void * clientData)
 	// Might be important but for now I'd rather just see when they change.
 	if (lastName != name)
 	{
-		//cout  << "Added node: " + name << endl;
-		//cout  << node.apiTypeStr() << endl;
+		cout  << "Added node: " + name << endl;
+		cout  << node.apiTypeStr() << endl;
 	}
 
 	if (node.hasFn(MFn::kMesh))
@@ -1062,44 +923,11 @@ void nodeAdded(MObject &node, void * clientData)
 	{
 		SendMaterial(lastAddedNode);
 		callbackIdArray.append(MNodeMessage::addAttributeChangedCallback(lastAddedNode, matChanged, NULL, &status));
-	/*	MFnDependencyNode theNode(node);*/
-		//MObjectArray shaders;
-		//MIntArray indiciesPerFace;
-
-		//MPlug sPlug = theNode.findPlug("surfaceShader",&status);
-		//if (status == MS::kSuccess)
-		//{
-		//	MPlugArray mat;
-
-		//	//Get the actual material
-		//	sPlug.connectedTo(mat, true, false);
-		//	//cout  << "nrOfPlugs: " << mat.length() << endl;
-		//	//callbackIdArray.append(MNodeMessage::addAttributeChangedCallback(mat[0].node(), matChanged2, NULL, &status));
-		//}
-		//else
-		//{
-		//	//cout  << "SURFACE SHADER WASN'T FOUND!!" << endl;
-		//}
 	}
 	else if (node.hasFn(MFn::kFileTexture))
 	{
 		callbackIdArray.append(MNodeMessage::addAttributeChangedCallback(node, textureChanged, NULL, &status));
 	}
-
-	MFnDependencyNode latestNode(node);
-
-	/*//cout  << latestNode.typeName() << endl;*/
-
-	if (latestNode.typeName() == "polyExtrudeFace")
-	{
-		callbackIdArray.append(MNodeMessage::addAttributeChangedCallback(node, extrudeChange, NULL, &status));
-	}
-	//if (node.hasFn(MFn::kExtrude))
-	//{
-	//	//cout  << "''''''''''''''''''''''''I was extruded''''''''''''''''''''''''''''''''''''''" << endl;
-	//}
-
-	lastAddedNode = node;
 	lastName = name;
 }
 
@@ -1351,9 +1179,9 @@ void nameChanged(MObject &node, const MString &prevName, void *clientData)
 		name = dependNode.name();
 		if (prevName != name)
 		{
-			//cout  << "Node name changed!" << endl;
-			//cout  << "Node: " + prevName << endl;
-			//cout  << "Is now Node: " + name << endl;
+			cout  << "Node name changed!" << endl;
+			cout  << "Node: " + prevName << endl;
+			cout  << "Is now Node: " + name << endl;
 		}
 	}
 }
@@ -1739,12 +1567,29 @@ void addCallbacksToExistingNodes()
 
 void selectionChangedCB(void* x)
 {
+	MSelectionList selected;
+	MGlobal::getActiveSelectionList(selected);
+
+	MObject obj;
+
 	//Extruding generally ends when the user selects something different.
 	//It is far from an optimal solution and too general but will most likely work.
 	if (isExtruding)
 	{
 		isExtruding = false;
 	}
+
+	for (int i = 0; i < selected.length(); i++)
+	{
+		selected.getDependNode(i, obj);
+
+		if (obj.apiType() == MFn::kPolyExtrudeFacet)
+		{
+			isExtruding = true;
+		}
+	}
+
+
 	/*//cout  << "SELECTION CHANGED!" << endl;*/
 }
 /*
