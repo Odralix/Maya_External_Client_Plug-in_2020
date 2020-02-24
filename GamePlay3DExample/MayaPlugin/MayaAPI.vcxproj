@@ -197,6 +197,7 @@
     <ClInclude Include="MayaBatchOutput.h" />
     <ClInclude Include="maya_includes.h" />
     <ClInclude Include="Mesh.h" />
+    <ClInclude Include="sClass.h" />
     <ClInclude Include="TempStruct.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

@@ -18,6 +18,7 @@ public:
 
 	void SetTriIndicies(int* indicies, int size);
 	void SetVerts(float* newVerts, int size);
+
 	void SetMatName(const char* name, int len);
 	void SetTransform(double* newTransform);
 

@@ -278,21 +278,10 @@ bool ComLib::recv(char * msg, size_t & length)
 
 size_t ComLib::nextSize()
 {
-	// This is never used.
+	void* tmp = static_cast<char*>(mData) + offset;
 
+	size_t len = -1;
+	memcpy_s(&len, sizeof(size_t), tmp, sizeof(size_t));
 
-	//size_t size;
-	//bool msg = false;
-
-	//if(msg)
-	//{
-	//	//size = msgSize;
-	//}
-	//else
-	//{
-	//	size = 0;
-	//}
-	//return size;
-
-	return -1;
+	return len;
 }

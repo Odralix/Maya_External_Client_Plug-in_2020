@@ -123,12 +123,12 @@ void MayaBatchOutput::SetCamOrthoZoom(std::string & camName, float zoom[2])
 	m_MasterHead.zoomCount++;
 }
 
-void MayaBatchOutput::SetVert(std::string & meshName, unsigned int vertID, float vertVals[4])
+void MayaBatchOutput::SetVertPos(std::string & meshName, unsigned int vertID, float vertVals[4])
 {
 	if (vertMap.find(meshName) == vertMap.end())
 	{
 		//If a map doesn't exist yet it definitely hasn't been counted yet.
-		m_MasterHead.numVertsChanged++;
+		m_MasterHead.numMeshChanged++;
 	}
 	//else if (vertMap[meshName].find(vertID) == vertMap[meshName].end())
 	//{
@@ -140,7 +140,58 @@ void MayaBatchOutput::SetVert(std::string & meshName, unsigned int vertID, float
 	{
 		vertMap[meshName][vertID][i] = vertVals[i];
 	}
+	//Fill up float with a very specific value to show that it is not to be used.
+	for (int i = 3; i < 8; i++)
+	{
+		vertMap[meshName][vertID][i] = 0.123456;
+	}
 }
+
+void MayaBatchOutput::SetVert(std::string& meshName, unsigned int vertID, float vertVals[8])
+{
+	if (vertMap.find(meshName) == vertMap.end())
+	{
+		//If a map doesn't exist yet it definitely hasn't been counted yet.
+		m_MasterHead.numMeshChanged++;
+	}
+	//else if (vertMap[meshName].find(vertID) == vertMap[meshName].end())
+	//{
+	//	//Even if the meshName is there it may be a new vertID in which case it must be counted.
+	//	//The map only contains the most recent change so we must only count each vert once.
+	//	m_MasterHead.numVertsChanged++;
+	//}
+	for (int i = 0; i < 8; i++)
+	{
+		vertMap[meshName][vertID][i] = vertVals[i];
+	}
+}
+
+//void MayaBatchOutput::SetVerts(std::string & meshName, std::vector<float[3]> &changedVerts)
+//{
+//	if (movedVertMap.find(meshName) == movedVertMap.end())
+//	{
+//		//If a map doesn't exist yet it definitely hasn't been counted yet.
+//		m_MasterHead.numVertsChanged++;
+//		movedVertMap[meshName].reserve(changedVerts.size());
+//	}
+//
+//	movedVertMap[meshName] = changedVerts;
+//}
+//
+//void MayaBatchOutput::SetVerts(std::string & meshName, std::vector<int>& vertID, float vertVals[4])
+//{
+//	if (movedVertMap.find(meshName) == movedVertMap.end())
+//	{
+//		//If a map doesn't exist yet it definitely hasn't been counted yet.
+//		m_MasterHead.numVertsChanged++;
+//	}
+//
+//
+//	for (int i = 0; i < 3; i++)
+//	{
+//		movedVertMap[meshName][vertID][i] = vertVals[i];
+//	}
+//}
 
 void  MayaBatchOutput::RemoveObject(std::string name)
 {
@@ -175,7 +226,7 @@ void MayaBatchOutput::Reset()
 	m_MasterHead.matCount = 0;
 	m_MasterHead.matSwitchedCount = 0;
 	m_MasterHead.zoomCount = 0;
-	m_MasterHead.numVertsChanged = 0;
+	m_MasterHead.numMeshChanged = 0;
 	removeNames.clear();
 	for (const auto& nr : transformMap)
 	{

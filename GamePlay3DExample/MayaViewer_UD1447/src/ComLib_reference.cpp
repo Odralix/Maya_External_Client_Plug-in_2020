@@ -1,7 +1,5 @@
 //Author: Ossian Edström
 
-//Author: Ossian Edström
-
 #include "ComLib_reference.h"
 
 ComLib::ComLib(const std::string & secret, const size_t & buffSize, ClientType type)

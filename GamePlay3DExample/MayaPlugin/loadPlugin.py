@@ -20,7 +20,7 @@ answer = s.recv(1024)
 """
 
 # load plugin
-s.send(b'loadPlugin("D:/School/Ar 3 TechArt/Konstruktion av spelteknikverktyg UD1447/GitRep Final/GamePlay3DExample/MayaPlugin/x64/Debug/MayaAPI.mll")\n')
+s.send(b'loadPlugin("D:/School/Ar 3 TechArt/Konstruktion av spelteknikverktyg UD1447/GitRep Final/GamePlay3DExample/MayaPlugin/x64/Release/MayaAPI.mll")\n')
 
 # close socket with Maya
 s.close()

@@ -135,7 +135,8 @@ xcopy ..\..\..\GamePlay-master\gameplay\res\ui res\ui\* /s /y /d</Command>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;GP_USE_GAMEPAD;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>..\..\..\GamePlay-master\gameplay\src;..\..\..\GamePlay-master\external-deps\include;$(MSBuildProgramFiles32)\Microsoft DirectX SDK (June 2010)\include;</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(DXSDK_DIR)include;$(SolutionDir)\..\GamePlay-master\external-deps\include;$(SolutionDir)\..\GamePlay-master\gameplay\src;..\..\..\GamePlay-master\gameplay\src;..\..\..\GamePlay-master\external-deps\include;$(MSBuildProgramFiles32)\Microsoft DirectX SDK (June 2010)\include</AdditionalIncludeDirectories>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -143,7 +144,7 @@ xcopy ..\..\..\GamePlay-master\gameplay\res\ui res\ui\* /s /y /d</Command>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <AdditionalDependencies>OpenGL32.lib;GLU32.lib;gameplay.lib;gameplay-deps.lib;XInput.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>..\..\..\GamePlay-master\external-deps\lib\windows\x86_64\Release;..\..\..\GamePlay-master\gameplay\Release;$(MSBuildProgramFiles32)\Microsoft DirectX SDK (June 2010)\Lib\x64</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(SolutionDir)\..\GamePlay-master\external-deps\lib\windows\x86_64\Debug;$(SolutionDir)\..\GamePlay-master\gameplay\Debug;$(DXSDK_DIR)Lib\x64</AdditionalLibraryDirectories>
     </Link>
     <CustomBuildStep>
       <Command>
@@ -154,8 +155,8 @@ xcopy ..\..\..\GamePlay-master\gameplay\res\ui res\ui\* /s /y /d</Command>
       </Outputs>
     </CustomBuildStep>
     <PreBuildEvent>
-      <Command>xcopy ..\..\..\GamePlay-master\gameplay\res\shaders res\shaders\* /s /y /d
-xcopy ..\..\..\GamePlay-master\gameplay\res\ui res\ui\* /s /y /d</Command>
+      <Command>
+      </Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>

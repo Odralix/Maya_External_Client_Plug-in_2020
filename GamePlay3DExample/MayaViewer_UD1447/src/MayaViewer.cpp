@@ -11,7 +11,7 @@ int gDeltaX;
 int gDeltaY;
 bool gMousePressed;
 
-ComLib consumer((std::string)"stuff", 100 * 1024 * 1024, ComLib::CONSUMER);
+ComLib consumer((std::string)"stuff", 200* 1024*1024, ComLib::CONSUMER);
 
 MayaViewer::MayaViewer()
     : _scene(NULL), _wireframe(false)
@@ -654,9 +654,9 @@ void MayaViewer::msgDirector()
 			}
 		}
 
-		if (head.numVertsChanged > 0)
+		if (head.numMeshChanged > 0)
 		{
-			for (int i = 0; i < head.numVertsChanged; i++)
+			for (int i = 0; i < head.numMeshChanged; i++)
 			{
 				int meshNameLen = 0;
 				size_t size = 0;
@@ -682,13 +682,26 @@ void MayaViewer::msgDirector()
 				{
 					int vertID = -1;
 					consumer.recv((char*)&vertID, size);
-					float pos[3];
-					consumer.recv((char*)pos, size);
+
+					int nrFloats = -1;
+					consumer.recv((char*)&nrFloats, size);
+
+					float* vertData = new float[nrFloats];
+					consumer.recv((char*)vertData, size);
 
 					int vertStep = vertID * 8;
-					vertexRef[meshName][vertStep] = pos[0];
-					vertexRef[meshName][vertStep + 1] = pos[1];
-					vertexRef[meshName][vertStep + 2] = pos[2];
+
+					for (int k = 0; k < nrFloats; k++)
+					{
+						vertexRef[meshName][vertStep + k] = vertData[k];
+					}
+
+					delete[] vertData;
+
+		/*			vertexRef[meshName][vertStep] = vertData[0];
+					vertexRef[meshName][vertStep + 1] = vertData[1];
+					vertexRef[meshName][vertStep + 2] = vertData[2];*/
+
 					/*mesh->getMesh()->getVertexFormat().getElement(vertID)*/
 					// As of now I am unable to retrieve the verticies through gameplay3D's interface.
 					// As such I will store the array of float values for my verts seperately when I input them for now.

@@ -21,7 +21,7 @@ bool initBool = false;
 enum NODE_TYPE { TRANSFORM, MESH };
 MTimer gTimer;
 
-ComLib producer((std::string)"stuff", 100 * 1024 * 1024, ComLib::PRODUCER);
+ComLib producer((std::string)"stuff", 200*1024*1024, ComLib::PRODUCER);
 MString lastName = "0";
 
 // keep track of created meshes to maintain them
@@ -35,7 +35,7 @@ void SendTransform(MObject transformNode)
 {
 	MFnDependencyNode nameFetch(transformNode);
 
-	//cout << nameFetch.name() << " Transform changed!" << endl;
+	////cout  << nameFetch.name() << " Transform changed!" << endl;
 
 	//Local transform
 	//MFnTransform getTransform(transformNode);
@@ -92,7 +92,7 @@ void nodeTransformChanged(MNodeMessage::AttributeMessage msg, MPlug &plug, MPlug
 {
 	MFnDependencyNode nameFetch(plug.node());
 
-	/*cout << "TRANSFORM CALLBACK FOR " << nameFetch.name() << endl;*/
+	/*//cout  << "TRANSFORM CALLBACK FOR " << nameFetch.name() << endl;*/
 
 	if (msg & MNodeMessage::kAttributeSet)
 	{
@@ -111,13 +111,13 @@ void SendMaterial(MObject &node)
 	MPlug ambColPlug;
 	MFnDependencyNode funcMat(node);
 
-	cout << "Name: " << funcMat.name() << endl;
+	//cout  << "Name: " << funcMat.name() << endl;
 	colPlug = funcMat.findPlug("color", true, &status);
 	ambColPlug = funcMat.findPlug("ambc", true, &status);
-	cout << colPlug.name() << endl;
-	cout << "" << endl;
-	cout << ambColPlug.name() << endl;
-	cout << endl;
+	//cout  << colPlug.name() << endl;
+	//cout  << "" << endl;
+	//cout  << ambColPlug.name() << endl;
+	//cout  << endl;
 
 	//Check if a plug has textures
 	MPlugArray plugs;
@@ -129,12 +129,12 @@ void SendMaterial(MObject &node)
 		{
 			if (plugs[j].node().apiType() == MFn::kFileTexture)
 			{
-				cout << "hit " << j << endl;
+				//cout  << "hit " << j << endl;
 				MFnDependencyNode dep(plugs[j].node());
 				MPlug ftn = dep.findPlug("ftn");
-				cout << "plugName: " << ftn.name().asChar() << endl;
+				//cout  << "plugName: " << ftn.name().asChar() << endl;
 				ftn.getValue(textureName);
-				cout << textureName << endl;
+				//cout  << textureName << endl;
 				if (textureName != "")
 				{
 					batch.SetMaterial((std::string)funcMat.name().asChar(), (std::string)textureName.asChar());
@@ -144,13 +144,13 @@ void SendMaterial(MObject &node)
 					MColor color;
 					for (int j = 0; j < colPlug.numChildren(); j++)
 					{
-						/*cout << colPlug.child(j).name().asChar() << endl;*/
+						/*//cout  << colPlug.child(j).name().asChar() << endl;*/
 						colPlug.child(j, &status).getValue(color[j]);
 					}
 
-					cout << "R: " << color.r << endl;
-					cout << "G: " << color.g << endl;
-					cout << "B: " << color.b << endl;
+					//cout  << "R: " << color.r << endl;
+					//cout  << "G: " << color.g << endl;
+					//cout  << "B: " << color.b << endl;
 
 					float rgb[3];
 					rgb[0] = color.r;
@@ -167,13 +167,13 @@ void SendMaterial(MObject &node)
 		MColor color;
 		for (int j = 0; j < colPlug.numChildren(); j++)
 		{
-			/*cout << colPlug.child(j).name().asChar() << endl;*/
+			/*//cout  << colPlug.child(j).name().asChar() << endl;*/
 			colPlug.child(j, &status).getValue(color[j]);
 		}
 
-		cout << "R: " << color.r << endl;
-		cout << "G: " << color.g << endl;
-		cout << "B: " << color.b << endl;
+		//cout  << "R: " << color.r << endl;
+		//cout  << "G: " << color.g << endl;
+		//cout  << "B: " << color.b << endl;
 		
 		float rgb[3];
 		rgb[0] = color.r;
@@ -181,19 +181,19 @@ void SendMaterial(MObject &node)
 		rgb[2] = color.b;
 
 		batch.SetMaterial((std::string)funcMat.name().asChar(), rgb, 3);
-		/*cout << "A: " << color.a << endl;*/
+		/*//cout  << "A: " << color.a << endl;*/
 	}
 
 	//MColor color;
 	//for (int j = 0; j < ambColPlug.numChildren(); j++)
 	//{
-	//	cout << ambColPlug.child(j).name().asChar() << endl;
+	//	//cout  << ambColPlug.child(j).name().asChar() << endl;
 	//	ambColPlug.child(j, &status).getValue(color[j]);
 	//}
 
-	//cout << "ambcR: " << color.r << endl;
-	//cout << "ambcG: " << color.g << endl;
-	//cout << "ambcB: " << color.b << endl;
+	////cout  << "ambcR: " << color.r << endl;
+	////cout  << "ambcG: " << color.g << endl;
+	////cout  << "ambcB: " << color.b << endl;
 }
 
 // Must be sent with node as a mesh that is already in the MayaBatchOutput.
@@ -204,8 +204,8 @@ void SendMaterialName(MObject &node)
 
 	//nr of parents
 	int numParents = mesh.parentCount();
-	/*cout << "Number of Parents: " << numParents << endl;*/
-	cout << "Entered SendMaterialName" << endl;
+	/*//cout  << "Number of Parents: " << numParents << endl;*/
+	//cout  << "Entered SendMaterialName" << endl;
 
 	//Loop through
 	for (int i = 0; i < numParents; i++)
@@ -220,7 +220,7 @@ void SendMaterialName(MObject &node)
 
 		if (shaders.length() == 0)
 		{
-			cout << "MESH " << mesh.name().asChar() << " HAS NO SHADER" << endl;
+			//cout  << "MESH " << mesh.name().asChar() << " HAS NO SHADER" << endl;
 		}
 		else
 		{
@@ -236,7 +236,7 @@ void SendMaterialName(MObject &node)
 			if (mats.length())
 			{
 				MFnDependencyNode funcMat(mats[0].node());
-				cout << "Material Name: " << funcMat.name().asChar() << endl;
+				//cout  << "Material Name: " << funcMat.name().asChar() << endl;
 				//Note, the name is technically the transform and not the mesh.
 				MFnDagNode dagSearch(node);
 				MObject handle = dagSearch.parent(0);
@@ -252,16 +252,16 @@ void SendMaterialName(MObject &node)
 void SendMaterialNameMatInput(MObject &node)
 {
 	MFnDependencyNode mat(node);
-	cout << "ENTERED MATERIAL NAME INPUT" << endl;
-	cout << mat.name() << endl;
+	//cout  << "ENTERED MATERIAL NAME INPUT" << endl;
+	//cout  << mat.name() << endl;
 
 	MPlugArray arr;
 	mat.findPlug("oc").connectedTo(arr, false, true);
 
 	if (arr.length() != 0)
 	{
-		cout << arr.length() << endl;
-		cout << "Entered" << endl;
+		//cout  << arr.length() << endl;
+		//cout  << "Entered" << endl;
 		for (int i = 0; i < arr.length(); i++)
 		{
 			MFnDependencyNode shadingGroup(arr[i].node());
@@ -269,8 +269,8 @@ void SendMaterialNameMatInput(MObject &node)
 			MPlug dagSetMembers;
 			dagSetMembers = shadingGroup.findPlug("dsm");
 
-			//cout << "Numchildren: " << dagSetMembers.numChildren() << endl;
-			//cout << "NumElements: " << dagSetMembers.numElements() << endl;
+			////cout  << "Numchildren: " << dagSetMembers.numChildren() << endl;
+			////cout  << "NumElements: " << dagSetMembers.numElements() << endl;
 			for (int j = 0; j < dagSetMembers.numElements(); j++)
 			{
 				MPlugArray meshPlugs;
@@ -283,7 +283,7 @@ void SendMaterialNameMatInput(MObject &node)
 
 				batch.SetMatSwitched((std::string)parent.name().asChar(), (std::string) mat.name().asChar());
 				//batch.SetMatSwitched()
-				//cout << parent.name() << endl;
+				////cout  << parent.name() << endl;
 			}
 		}
 
@@ -291,17 +291,17 @@ void SendMaterialNameMatInput(MObject &node)
 
 		//if (status == MS::kSuccess)
 		//{
-		//	cout << "Found DagSetMembers!" << endl;
+		//	//cout  << "Found DagSetMembers!" << endl;
 		//}
 
-		/*cout << "NUMBER DAGSETMEMBERS: " << << endl;*/
+		/*//cout  << "NUMBER DAGSETMEMBERS: " << << endl;*/
 
 		//MPlugArray meshPlugs;
 		//dagSetMembers.connectedTo(meshPlugs, true, false);
 		//for (int i = 0; i < meshPlugs.length(); i++)
 		//{
 		//	MFnDependencyNode mesh(meshPlugs[i].node());
-		//	cout << mesh.name() << endl;
+		//	//cout  << mesh.name() << endl;
 		//}
 	}
 }
@@ -312,8 +312,8 @@ void SetupMaterials(MObject &node)
 
 	//nr of parents
 	int numParents = mesh.parentCount();
-	/*cout << "Number of Parents: " << numParents << endl;*/
-	cout << "Entered SetupMaterials" << endl;
+	/*//cout  << "Number of Parents: " << numParents << endl;*/
+	//cout  << "Entered SetupMaterials" << endl;
 
 	//Loop through
 	for (int i = 0; i < numParents; i++)
@@ -328,7 +328,7 @@ void SetupMaterials(MObject &node)
 
 		if (shaders.length() == 0)
 		{
-			cout << "MESH " << mesh.name().asChar() << " HAS NO SHADER" << endl;
+			//cout  << "MESH " << mesh.name().asChar() << " HAS NO SHADER" << endl;
 		}
 		else
 		{
@@ -344,7 +344,7 @@ void SetupMaterials(MObject &node)
 			if (mats.length())
 			{
 				MFnDependencyNode funcMat(mats[0].node());
-				cout <<"Material Name: " << funcMat.name().asChar() << endl;
+				//cout  <<"Material Name: " << funcMat.name().asChar() << endl;
 				if (mats[0].node().hasFn(MFn::kLambert))
 				{
 					/*MPlugArray rgb;
@@ -357,16 +357,16 @@ void SetupMaterials(MObject &node)
 
 					if (plug.isArray())
 					{
-						cout << "I'm ARRAY" << endl;
+						//cout  << "I'm ARRAY" << endl;
 					}
 					MColor color;
 
-					cout << plug.name() << endl;
-					cout << "NumChildren: "<< plug.numChildren() << endl;
+					//cout  << plug.name() << endl;
+					//cout  << "NumChildren: "<< plug.numChildren() << endl;
 
 					for(int j = 0; j< plug.numChildren(); j++)
 					{
-						cout << plug.child(j).name().asChar() << endl;
+						//cout  << plug.child(j).name().asChar() << endl;
 						plug.child(j, &status).getValue(color[j]);
 					}
 
@@ -378,10 +378,10 @@ void SetupMaterials(MObject &node)
 					{
 						if (plugs[j].node().apiType() == MFn::kFileTexture)
 						{
-							cout << "hit "<< j << endl;
+							//cout  << "hit "<< j << endl;
 							MFnDependencyNode dep(plugs[j].node());
 							MPlug ftn = dep.findPlug("ftn");
-							cout << "plugName: " << ftn.name().asChar() << endl;
+							//cout  << "plugName: " << ftn.name().asChar() << endl;
 							ftn.getValue(textureName);
 						/*	textureName = dep.name();*/
 						}
@@ -389,10 +389,10 @@ void SetupMaterials(MObject &node)
 
 					if (textureName == "")
 					{
-						cout << "R: " << color.r << endl;
-						cout << "G: " << color.g << endl;
-						cout << "B: " << color.b << endl;
-					/*	cout << "A: " << color.a << endl;*/
+						//cout  << "R: " << color.r << endl;
+						//cout  << "G: " << color.g << endl;
+						//cout  << "B: " << color.b << endl;
+					/*	//cout  << "A: " << color.a << endl;*/
 						float rgb[3];
 						rgb[0] = color.r;
 						rgb[1] = color.g;
@@ -401,20 +401,20 @@ void SetupMaterials(MObject &node)
 					}
 					else
 					{
-						cout << "Texture: " << textureName << endl;
+						//cout  << "Texture: " << textureName << endl;
 						/*batch.SetMaterial((std::string)funcMat.name().asChar(), (std::string)textureName.asChar());*/
 					}
 
 		/*			plug.getValue(color.r);
-					cout <<"R: " << color.r << endl;*/
+					//cout  <<"R: " << color.r << endl;*/
 
-					/*cout << rgb.length() << endl;
+					/*//cout  << rgb.length() << endl;
 					for (int j = 0; j < rgb.length(); j++)
 					{
-						cout << rgb[j].name().asChar() << endl;
+						//cout  << rgb[j].name().asChar() << endl;
 					}*/
 
-					/*cout << plug.*/
+					/*//cout  << plug.*/
 				}
 				else
 				{
@@ -424,7 +424,7 @@ void SetupMaterials(MObject &node)
 			}
 			else
 			{
-				cout << "MESH " << mesh.name().asChar() << "HAS NO MATS" << endl;
+				//cout  << "MESH " << mesh.name().asChar() << "HAS NO MATS" << endl;
 			}
 		}
 	}
@@ -432,8 +432,8 @@ void SetupMaterials(MObject &node)
 
 void faceVertMove(MNodeMessage::AttributeMessage msg, MPlug &plug, MPlug &otherPlug, void* x)
 {
-	cout << "ENTERED FACEVERT" << endl;
-	cout << plug.name() << ": " << plug.partialName() << endl;
+	//cout  << "ENTERED FACEVERT" << endl;
+	//cout  << plug.name() << ": " << plug.partialName() << endl;
 }
 
 //For use only on MObjects with a connected MFn::kMesh.
@@ -457,7 +457,7 @@ void SendMesh(MObject Mnode)
 
 		//Replace old vertex array and print the new info out.
 		mapOfVertexArrays[meshName] = vertexArr.length();
-		cout << parent.name().asChar() << " Topology Changed! " << "New vertex locations: " << endl;
+		//cout  << parent.name().asChar() << " Topology Changed! " << "New vertex locations: " << endl;
 
 		//Getting the number of verts
 		MeshHeader meshHead;
@@ -487,9 +487,9 @@ void SendMesh(MObject Mnode)
 
 		//for (int i = 0; i < meshHead.indexCount; i++)
 		//{
-		//	cout << triIndicies[i] << " ";
+		//	//cout  << triIndicies[i] << " ";
 		//}
-		//cout << endl;
+		////cout  << endl;
 
 		int numFaceVertices = meshHead.nrOfVerts;
 
@@ -521,14 +521,14 @@ void SendMesh(MObject Mnode)
 			{
 				/*normArr[i*3+j];*/
 				normArr[nCount] = get[j];
-				/*cout << normArr[nCount] << " ";*/
+				/*//cout  << normArr[nCount] << " ";*/
 				nCount++;
 			}
 			// Note: These are just initial UVs. There should technically be a callback for when the UVs change.
 			for (int j = 0; j < 2; j++)
 			{
 				UVArr[uvCount] = temp[j];
-				/*	cout << UVArr[uvCount] << " ";*/
+				/*	//cout  << UVArr[uvCount] << " ";*/
 				uvCount++;
 			}
 
@@ -541,9 +541,8 @@ void SendMesh(MObject Mnode)
 		int count = 0;
 		int count2 = 0;
 		int count3 = 0;
-		int count4 = 0;
 
-		cout << numFaceVertices << endl;
+		//cout  << numFaceVertices << endl;
 
 		for (int i = 0; i < numFaceVertices; i++)
 		{
@@ -551,7 +550,6 @@ void SendMesh(MObject Mnode)
 			{
 				verts[count] = posArr[i][j];
 				count++;
-				count4++;
 			}
 
 			for (int j = 0; j < 3; j++)
@@ -583,50 +581,92 @@ void SendMesh(MObject Mnode)
 	}
 	else
 	{
-	cout << "**********************************************************************************" << endl;
-	cout << "*********************** CRASH SAFETY NET WARNING!! *******************************" << endl;
-	cout << " ATTEMPTED TO CALL FUNCTION 'SetMesh' ON A MObject WITHOUT 'MFn::kMesh'." << endl;
-	cout << "************************* FUNCTION CALL IGNORED **********************************" << endl;
-	cout << "**********************************************************************************" << endl;
+	//cout  << "**********************************************************************************" << endl;
+	//cout  << "*********************** CRASH SAFETY NET WARNING!! *******************************" << endl;
+	//cout  << " ATTEMPTED TO CALL FUNCTION 'SetMesh' ON A MObject WITHOUT 'MFn::kMesh'." << endl;
+	//cout  << "************************* FUNCTION CALL IGNORED **********************************" << endl;
+	//cout  << "**********************************************************************************" << endl;
 	}
 }
 
+//Variable for Determining if outmesh call is a vertchange
+bool isVertChange = false;
+std::vector<int> changedVerts;
+
 void nodeMeshAttributeChanged(MNodeMessage::AttributeMessage msg, MPlug &plug, MPlug &otherPlug, void* x)
 {
-	 cout << plug.name() << ": " << plug.partialName() << endl;
+	/*//cout  << plug.name() << ": " << plug.partialName() << endl;*/
 
 	// For individually or soft select moved verticies. 
 	if (msg & MNodeMessage::kAttributeSet)
 	{
-		MObject transformNode = plug.node();
+		/*MObject transformNode = plug.node();*/
 
 		if (plug.isElement())
 		{
+			/*if (changedVerts.size() == changedVerts.capacity())
+			{
+				//cout  << "Add size" << endl;
+				changedVerts.reserve(changedVerts.capacity() * 3);
+			}
+			
+			changedVerts.emplace_back(plug.logicalIndex());
+			if (isVertChange == false)
+			{
+				isVertChange = true;
+			}*/
+			/*//cout  << "Entered plug change" << endl;*/
 			//Note, the name is technically the transform and not the mesh.
 			MFnDagNode dagSearch(plug.node());
 			MObject handle = dagSearch.parent(0);
 			MFnDagNode parent(handle);
-			cout << "In mesh " << parent.name() << endl;
-			cout << plug.partialName() << " Was changed! The vertex values are now: " << endl;
+			//////cout  << "In mesh " << parent.name() << endl;
+			//////cout  << plug.partialName() << " Was changed! The vertex values are now: " << endl;
 
-			// As we already have the vertID I feel like the face verticies should be accesable through the control point.
-			// However as MPoint has no such functionality this was the best I could figure out.
-			MItMeshFaceVertex iterator(plug.node(), &status);
-			int count = 0;
-			while (!iterator.isDone())
+			//// As we already have the vertID I feel like the face verticies should be accesable through the control point.
+			//// However as MPoint has no such functionality this was the best I could figure out.
+			////MItMeshFaceVertex iterator(plug.node(), &status);
+
+			MFnMesh mesh(plug.node());
+			int faceVertexId;
+			MItMeshVertex vertIt(plug.node());
+
+			//Note that we don't actually care about the previous index and thus assign it to faceVertexId temporarily.
+			vertIt.setIndex(plug.logicalIndex(), faceVertexId);
+
+			MIntArray conFaces;
+			vertIt.getConnectedFaces(conFaces);
+
+			//No need to take the position of each face vert individually as they have identical position.
+			MPoint point;
+			mesh.getPoint(plug.logicalIndex(), point);
+			float pos[4];
+			point.get(pos);
+		/*	//cout  << conFaces.length() << endl;*/
+			//Still need to send the position to the value on each face vert.
+			for (int i = 0; i < conFaces.length(); i++)
 			{
-				if (iterator.vertId() == plug.logicalIndex())
-				{
-					float xyz[4] = { 0 };
-					iterator.position(MSpace::kWorld, &status).get(xyz);
-					/*cout << "X: " << xyz[0] << " Y: " << xyz[1] << " Z: " << xyz[2] << endl;*/
-					/*cout << count << endl;*/
-
-					batch.SetVert((std::string)parent.name().asChar(), count, xyz);
-				}
-				count++;
-				iterator.next();
+				mesh.getFaceVertexBlindDataIndex(conFaces[i], plug.logicalIndex(), faceVertexId);
+				batch.SetVertPos((std::string)parent.name().asChar(), faceVertexId, pos);
 			}
+			/*mesh.getFaceVertexBlindDataIndex(, plug.logicalIndex(), faceVertexId);*/
+			
+
+			//int count = 0;
+			//while (!iterator.isDone())
+			//{
+			//	if (iterator.vertId() == plug.logicalIndex())
+			//	{
+			//		float xyz[4] = { 0 };
+			//		iterator.position(MSpace::kWorld, &status).get(xyz);
+			//		/*//cout  << "X: " << xyz[0] << " Y: " << xyz[1] << " Z: " << xyz[2] << endl;*/
+			//		/*//cout  << count << endl;*/
+
+			//		batch.SetVert((std::string)parent.name().asChar(), count, xyz);
+			//	}
+			//	count++;
+			//	iterator.next();
+			//}
 
 			//iterator.vertId
 			//MPoint pnt;
@@ -646,7 +686,7 @@ void nodeMeshAttributeChanged(MNodeMessage::AttributeMessage msg, MPlug &plug, M
 
 			///*producer.send(&z, sizeof(float));*/
 
-			//cout << "X: " << xyz[0] << " Y: " << xyz[1] << " Z: " << xyz[2] << endl;
+			////cout  << "X: " << xyz[0] << " Y: " << xyz[1] << " Z: " << xyz[2] << endl;
 			/*batch.SetVert((std::string)parent.name().asChar(), plug.logicalIndex(), xyz);*/
 
 		}
@@ -665,9 +705,9 @@ void nodeMeshAttributeChanged(MNodeMessage::AttributeMessage msg, MPlug &plug, M
 
 			MFnDagNode par(parHandle);
 
-			cout << par.name().asChar() << endl;
+			//cout  << par.name().asChar() << endl;
 		}*/
-		cout << "entered Topology change" << endl;
+		//cout  << "entered Topology change" << endl;
 
 		MFloatPointArray vertexArr;
 
@@ -691,8 +731,8 @@ void nodeMeshAttributeChanged(MNodeMessage::AttributeMessage msg, MPlug &plug, M
 		{
 			MSelectionList selected;
 			MGlobal::getActiveSelectionList(selected);
-			cout << "------IS EXTRUDING-------" << endl;
-			cout << "Selected length: " << selected.length() << endl;
+			////cout  << "------IS EXTRUDING-------" << endl;
+			////cout  << "Selected length: " << selected.length() << endl;
 
 			MItSelectionList selList(selected);
 
@@ -702,27 +742,21 @@ void nodeMeshAttributeChanged(MNodeMessage::AttributeMessage msg, MPlug &plug, M
 			{
 				selList.getDagPath(path, obj);
 
-				cout << obj.apiTypeStr() << endl;
-				cout << path.fullPathName() << endl;
+				////cout  << obj.apiTypeStr() << endl;
+				////cout  << path.fullPathName() << endl;
 				if (obj.hasFn(MFn::kMeshPolygonComponent))
 				{
-					//MItMeshFaceVertex vIt(path, obj);
-					//while (!vIt.isDone())
-					//{
-					//	cout << "Index: " << vIt.faceId() << endl;
-
-					//	vIt.next();
-					//}
-
 					MFnMesh mesh(path);
 
 					MItMeshPolygon itPoly(path, obj);
 					while (!itPoly.isDone())
 					{
 
-						cout << "Index: " << itPoly.index() << endl;
-						MIntArray globalVertIds;
-						itPoly.getVertices(globalVertIds);
+						////cout  << "Index: " << itPoly.index() << endl;
+
+						//Get an array with each vert for this polygon with GlobalIds
+		/*				MIntArray globalVertIds;
+						itPoly.getVertices(globalVertIds);*/
 						/*itPoly.getConnectedVertices(conVerts);*/
 
 						//Note, the name is technically the transform and not the mesh.
@@ -736,175 +770,114 @@ void nodeMeshAttributeChanged(MNodeMessage::AttributeMessage msg, MPlug &plug, M
 
 						faceIds.append(itPoly.index());
 
+						//For this and each connected face
 						for (int i = 0; i < faceIds.length(); i++)
 						{
-							for (int j = 0; j < globalVertIds.length(); j++)
+							//For each face, send all of its verts so that the face normals stay accurate.
+							MIntArray curVerts;
+							mesh.getPolygonVertices(faceIds[i], curVerts);
+
+							//Technically the pos of the connected ones don't change so one improvement would be to skip that.
+							for (int j = 0; j < curVerts.length(); j++)
 							{
-								/*cout << "Vert Index: " << Verts[i] << endl;*/
+								/*//cout  << "Vert Index: " << Verts[i] << endl;*/
 
-								mesh.getFaceVertexBlindDataIndex(faceIds[i], globalVertIds[j], faceVertexID);
+								mesh.getFaceVertexBlindDataIndex(faceIds[i], curVerts[j], faceVertexID);
 
+								//Position is the same for global and facevertices.
 								MPoint point;
-								mesh.getPoint(globalVertIds[j], point);
+								mesh.getPoint(curVerts[j], point);
 								float pos[4];
 								point.get(pos);
 
-								batch.SetVert((std::string)parent.name().asChar(), faceVertexID, pos);
+								MVector normal;
+								/*cout << "FaceId: " << faceIds[i] << endl;
+								cout << "Global vertId: " << globalVertIds[j] << endl;*/
+
+								mesh.getFaceVertexNormal(faceIds[i], curVerts[j], normal);
+
+								double normalArr[3] = { 0 };
+								status = normal.get(normalArr);
+
+								float2 uv;
+								mesh.getUVAtPoint(point, uv);
+
+								float vertData[8];
+								for (int k = 0; k < 3; k++)
+								{
+									vertData[k] = pos[k];
+								}
+
+								for (int k = 0; k < 3; k++)
+								{
+									vertData[k+3] = normalArr[k];
+								}
+
+								for (int k = 0; k < 2; k++)
+								{
+									vertData[k+6] = uv[k];
+								}
+
+								batch.SetVert((std::string)parent.name().asChar(), faceVertexID, vertData);
+
 							}
 						}
-
-						/*MItMeshFaceVertex faceVertIt(plug.node(), &status);
-						int prevFace;
-						int prevIndex;*/
-
-						//for (int i = 0; i < faceIds.length(); i++)
-						//{
-						//	cout << "ConFace Index: " << faceIds[i] << endl;
-						//	faceVertIt.setIndex(faceIds[i], 0, prevFace, prevIndex);
-
-						//	float vertPos[4];
-						//	while ((faceVertIt.faceId() == faceIds[i]) && !faceVertIt.isDone())
-						//	{
-						//		faceVertIt.position(MSpace::kWorld, &status).get(vertPos);
-						//		cout << "vertId: " << faceVertIt.vertId() << endl;
-						//		/*batch.SetVert((std::string)parent.name().asChar(), faceVertIt.faceId()*4, vertPos);*/
-						//		faceVertIt.next();
-						//	}
-						//}
-
-						////Note, the name is technically the transform and not the mesh.
-						/*MFnDagNode dagSearch(plug.node());
-						MObject handle = dagSearch.parent(0);
-						MFnDagNode parent(handle);*/
-
-						// As we already have the vertID I feel like the face verticies should be accesable through the control point.
-						// However as MPoint has no such functionality this was the best I could figure out.
-						/*MItMeshFaceVertex faceVertIt(path,obj, &status);*/
-						//MItMeshFaceVertex faceVertIt(plug.node(), &status);
-						//int count = 0;
-						//bool isNewVert = false;
-						//while (!faceVertIt.isDone())
-						//{
-						//	for (int i = 0; i < Verts.length(); i++)
-						//	{
-						//		if (faceVertIt.vertId() == Verts[i])
-						//		{
-						//			isNewVert = true;
-						//			break;
-						//		}
-						//	}
-
-						//	if (isNewVert)
-						//	{
-						//		if ((faceVertIt.faceId() == itPoly.index()))
-						//		{
-						//			cout << "Count = " << count << endl;
-						//		}
-						//		float xyz[4] = { 0 };
-						//		faceVertIt.position(MSpace::kWorld, &status).get(xyz);
-						//		/*cout << "X: " << xyz[0] << " Y: " << xyz[1] << " Z: " << xyz[2] << endl;*/
-						//		/*cout << count << endl;*/
-
-						//		batch.SetVert((std::string)parent.name().asChar(), count, xyz);
-						//		bool isNewVert = false;
-						//	}
-						//	count++;
-						//	faceVertIt.next();
-						//}
-
 						itPoly.next();
 					}
 				}
-
 				selList.next();
 			}
-			//for (int i = 0; i < selected.length(); i++)
-			//{
-			//	cout << "Element Nr: " << i << endl;
-			//	
-			//	MDagPath dagPath;
-			//	MObject obj;
-			//	selected.getDagPath(i, dagPath);
-			//	selected.getDependNode(i, obj);
-
-			//	//if (obj.hasFn(MFn::kMeshPolygonComponent))
-			//	//{
-			//	//	cout << "Objet is polygon" << endl;
-			//	//}
-			//	//MFnDependencyNode fn(path.node());
-			//	//cout << "Object: " << fn.name() << endl;
-			//	//cout << "Component apiStr: " << path.node().apiTypeStr() << endl;
-			//	/*MPlug plug;
-			//	selected.getPlug(1, plug);
-			//	cout << plug.name() << endl;
-
-			//	cout << plug.node().apiTypeStr() << endl;
-
-			//	MItMeshFaceVertex iterator(plug.node(), &status);
-			//	while (!iterator.isDone())
-			//	{
-			//		float positions[4];
-			//		iterator.position(MSpace::kWorld, &status).get(positions);
-			//		cout << "ITERATOR RUN: " << iterator.vertId() << endl;
-			//		iterator.next();
-			//	}*/
-			///*	MFnMesh newVerts(plug.node());
-
-			//	newVerts.*/
-			//}
-
 		}
-		//else
+		//else if (isVertChange == true)
 		//{
-		//	//The output mesh has changed without adding any new vertices.
-		//	//Or the lighting mode was changed to soft... OR probably a thousand other things...
-		//	//This means that some of the mesh's verticies have transformed or are otherwise being evaluated.
+		//	//SendMesh(Mnode);
+		//	//SendMaterialName(Mnode);
 
-		//	// In order to determine the relevant actions we identify the latest input mesh node
-		//	// Put we don't wish to even check anymore if it was simply a transform for the verticies. How do I filter that?
-		//	// Outmesh feels way too general, perhaps a completely seperate callback for the extrude node?
-		//	MFnMesh inputMesh(plug.node());
+		//	MFnDagNode dagSearch(plug.node());
+		//	MObject handle = dagSearch.parent(0);
+		//	MFnDagNode parent(handle);
+		//	////cout  << "In mesh " << parent.name() << endl;
+		//	////cout  << plug.partialName() << " Was changed! The vertex values are now: " << endl;
 
-		//	MPlug inPlug = meshNode.findPlug("inMesh", &status);
+		//	MFnMesh mesh(plug.node());
+		//	int faceVertexId;
+		//	MItMeshVertex vertIt(plug.node());
 
-		//	cout << "InMesh plug: " << inPlug.name() << endl;
+		//	std::vector<int> faceVerts;
+		//	faceVerts.reserve(changedVerts.size() * 4);
 
-		//	MPlugArray plugArr;
-		//	inPlug.connectedTo(plugArr, true, false);
-
-		//	cout << "Plug len: " << plugArr.length() << endl;
-
-		//	MFnDependencyNode latestNode (plugArr[0].node());
-
-		//	cout << latestNode.typeName() << endl;
-
-		//	if (latestNode.typeName() == "polyExtrudeFace")
+		//	for (int i = 0; i < changedVerts.size(); i++)
 		//	{
-		//		//Last node connected was polyExtrude.	
+		//		//Note that we don't actually care about the previous index and thus assign it to faceVertexId temporarily.
+		//		vertIt.setIndex(changedVerts[i], faceVertexId);
+
+		//		MIntArray conFaces;
+		//		vertIt.getConnectedFaces(conFaces);
+
+		//		//No need to take the position of each face vert individually as they have identical position.
+		//		MPoint point;
+		//		mesh.getPoint(plug.logicalIndex(), point);
+		//		float pos[4];
+		//		point.get(pos);
+
+		//		//Still need to send the position to the value on each face vert.
+		//		for (int j = 0; j < conFaces.length(); j++)
+		//		{
+		//			mesh.getFaceVertexBlindDataIndex(conFaces[j], changedVerts[i], faceVertexId);
+		//			faceVerts.emplace_back(faceVertexId);
+		//			batch.SetVert((std::string)parent.name().asChar(), faceVertexId, pos);
+		//		}
 		//	}
 
-		//	//MObject lookUp;
-		//	//lookUp = latestNode.getAliasAttr(false);
 
-		//	//if (lookUp.hasFn(MFn::kExtrude))
-		//	//{
-		//	//	cout << "------------Extrude-------------" << endl;
-		//	//}
-
-		//	/*latestNode.*/
+		//	changedVerts.clear();
+		//	isVertChange = false;
 		//}
 	}
 	else if ((msg & MNodeMessage::kConnectionMade) && (plug.partialName() == "iog"))
 	{
 		//New connection was made in the Inst Obj Groups. Most likely it's a material change.
 		SendMaterialName(plug.node());
-
-		/*SetupMaterials(plug.node());*/
-		//MPlugArray connects;
-		//plug.connectedTo(connects, false, true);
-		//MFnDependencyNode shadeNode(connects[0].node());
-		//MFnDependencyNode meshNode(plug.node());
-		//cout << "Mesh '" << meshNode.name().asChar() << "' now has shader '" << shadeNode.name().asChar() << "'" << endl;
 	}
 	else if (msg & MNodeMessage::kConnectionMade)
 	{
@@ -914,10 +887,10 @@ void nodeMeshAttributeChanged(MNodeMessage::AttributeMessage msg, MPlug &plug, M
 
 void matChanged(MNodeMessage::AttributeMessage msg, MPlug &plug, MPlug &otherPlug, void* x)
 {
-	/* cout << plug.name() << ": " << plug.partialName() << endl;*/
-	 //cout << "message:" << endl;
-	 //cout << msg << endl;
-	 //cout << plug.node().apiTypeStr() << endl;
+	/* //cout  << plug.name() << ": " << plug.partialName() << endl;*/
+	 ////cout  << "message:" << endl;
+	 ////cout  << msg << endl;
+	 ////cout  << plug.node().apiTypeStr() << endl;
 
 	 if (msg & MNodeMessage::kAttributeSet)
 	 {
@@ -928,8 +901,8 @@ void matChanged(MNodeMessage::AttributeMessage msg, MPlug &plug, MPlug &otherPlu
 			 SendMaterialNameMatInput(plug.node());
 			 /*MFnDependencyNode mat(plug.node());*/
 			 /*SendMaterialName()*/
-			 cout << "color changed" << endl;
-			 cout << "____" << endl;
+			 //cout  << "color changed" << endl;
+			 //cout  << "____" << endl;
 		 }
 	 }
 	 else if (msg & MNodeMessage::kConnectionMade)
@@ -939,8 +912,8 @@ void matChanged(MNodeMessage::AttributeMessage msg, MPlug &plug, MPlug &otherPlu
 			 //Something was plugged into the color plug, most likely a texture.
 			 SendMaterial(plug.node());
 			 SendMaterialNameMatInput(plug.node());
-			 cout << "connection MADE" << endl;
-			 cout << "____" << endl;
+			 //cout  << "connection MADE" << endl;
+			 //cout  << "____" << endl;
 		 }
 	 }
 	 else if (msg & MNodeMessage::kConnectionBroken)
@@ -950,17 +923,17 @@ void matChanged(MNodeMessage::AttributeMessage msg, MPlug &plug, MPlug &otherPlu
 			 //Something was unplugged from the color plug, most likely a texture.
 			 SendMaterial(plug.node());
 			 SendMaterialNameMatInput(plug.node());
-			 cout << "connection Broken" << endl;
-			 cout << "____" << endl;
+			 //cout  << "connection Broken" << endl;
+			 //cout  << "____" << endl;
 		 }
 	 }
-	/* cout << "____" << endl;*/
-	/*cout << "Material Info" << endl;*/
+	/* //cout  << "____" << endl;*/
+	/*//cout  << "Material Info" << endl;*/
 }
 
 void textureChanged(MNodeMessage::AttributeMessage msg, MPlug &plug, MPlug &otherPlug, void* x)
 {
-	/*cout << plug.name() << ": " << plug.partialName() << endl;*/
+	/*//cout  << plug.name() << ": " << plug.partialName() << endl;*/
 	if (msg & MNodeMessage::kAttributeSet && plug.partialName() == "ftn")
 	{
 		// Called every time the texture for a file is changed.
@@ -975,7 +948,7 @@ void textureChanged(MNodeMessage::AttributeMessage msg, MPlug &plug, MPlug &othe
 
 		MFnDependencyNode matNode(matPlugs[0].node());
 		plug.getValue(texName);
-		cout << "Texture changed for Material "<< matNode.name().asChar() <<" to " << texName << endl;
+		//cout  << "Texture changed for Material "<< matNode.name().asChar() <<" to " << texName << endl;
 		SendMaterial(matPlugs[0].node());
 		SendMaterialNameMatInput(matPlugs[0].node());
 	}
@@ -984,17 +957,17 @@ void textureChanged(MNodeMessage::AttributeMessage msg, MPlug &plug, MPlug &othe
 
 void extrudeChange(MNodeMessage::AttributeMessage msg, MPlug &plug, MPlug &otherPlug, void* x)
 {
-	cout << "EXTRUDE CHANGE ENTER" << endl;
-	cout << plug.name() << ": " << plug.partialName() << endl;
+	//cout  << "EXTRUDE CHANGE ENTER" << endl;
+	//cout  << plug.name() << ": " << plug.partialName() << endl;
 	isExtruding = true;
 	if (msg & MNodeMessage::kAttributeSet)
 	{
-		cout << "HAH!" << endl;
+		//cout  << "HAH!" << endl;
 		//MObject transformNode = plug.node();
 
 		//if (plug.isElement())
 		//{
-		//	cout << plug.partialName() << " Was changed! The vertex values are now: " << endl;
+		//	//cout  << plug.partialName() << " Was changed! The vertex values are now: " << endl;
 		//	MFnMesh inputMesh(plug.node());
 
 		//	int index = -1;
@@ -1010,12 +983,12 @@ void extrudeChange(MNodeMessage::AttributeMessage msg, MPlug &plug, MPlug &other
 
 		//	/*producer.send(&z, sizeof(float));*/
 
-		//	cout << "X: " << x << " Y: " << y << " Z: " << z << endl;
+		//	//cout  << "X: " << x << " Y: " << y << " Z: " << z << endl;
 		//}
 	}
 	else if (msg & MNodeMessage::kAttributeEval && plug.partialName() == "out")
 	{
-		cout << "HOOO!" << endl;
+		//cout  << "HOOO!" << endl;
 	}
 }
 
@@ -1033,7 +1006,7 @@ MObject lastAddedNode;
 void nodeAdded(MObject &node, void * clientData)
 {
 	/*MFn::Type (node.apiType());*/
-	/*cout << node.apiType() << endl;*/
+	/*//cout  << node.apiType() << endl;*/
 	//... implement this and other callbacks
 
 	// since all nodes are dependency nodes this should print all nodes.
@@ -1045,8 +1018,8 @@ void nodeAdded(MObject &node, void * clientData)
 	// Might be important but for now I'd rather just see when they change.
 	if (lastName != name)
 	{
-		cout << "Added node: " + name << endl;
-		cout << node.apiTypeStr() << endl;
+		//cout  << "Added node: " + name << endl;
+		//cout  << node.apiTypeStr() << endl;
 	}
 
 	if (node.hasFn(MFn::kMesh))
@@ -1066,13 +1039,13 @@ void nodeAdded(MObject &node, void * clientData)
 		//
 		////get.getConnectedShaders(0, shaders, indiciesPerFace);
 
-		//cout << shaders.length() << endl;
+		////cout  << shaders.length() << endl;
 
 		MFloatPointArray vertexArr;
 		inputMesh.getPoints(vertexArr);
 		const char* temp = name.asChar();
 		string meshName(temp);
-		cout << "MeshName: "<< meshName << endl;
+		//cout  << "MeshName: "<< meshName << endl;
 		mapOfVertexArrays.insert(std::make_pair(meshName, vertexArr.length()));
 
 		/*callbackIdArray.append(MPolyMessage::addPolyTopologyChangedCallback(node, topologyChanged, NULL, &status));*/
@@ -1100,12 +1073,12 @@ void nodeAdded(MObject &node, void * clientData)
 
 		//	//Get the actual material
 		//	sPlug.connectedTo(mat, true, false);
-		//	cout << "nrOfPlugs: " << mat.length() << endl;
+		//	//cout  << "nrOfPlugs: " << mat.length() << endl;
 		//	//callbackIdArray.append(MNodeMessage::addAttributeChangedCallback(mat[0].node(), matChanged2, NULL, &status));
 		//}
 		//else
 		//{
-		//	cout << "SURFACE SHADER WASN'T FOUND!!" << endl;
+		//	//cout  << "SURFACE SHADER WASN'T FOUND!!" << endl;
 		//}
 	}
 	else if (node.hasFn(MFn::kFileTexture))
@@ -1115,7 +1088,7 @@ void nodeAdded(MObject &node, void * clientData)
 
 	MFnDependencyNode latestNode(node);
 
-	/*cout << latestNode.typeName() << endl;*/
+	/*//cout  << latestNode.typeName() << endl;*/
 
 	if (latestNode.typeName() == "polyExtrudeFace")
 	{
@@ -1123,7 +1096,7 @@ void nodeAdded(MObject &node, void * clientData)
 	}
 	//if (node.hasFn(MFn::kExtrude))
 	//{
-	//	cout << "''''''''''''''''''''''''I was extruded''''''''''''''''''''''''''''''''''''''" << endl;
+	//	//cout  << "''''''''''''''''''''''''I was extruded''''''''''''''''''''''''''''''''''''''" << endl;
 	//}
 
 	lastAddedNode = node;
@@ -1159,31 +1132,31 @@ void nodeRemoved(MObject &node, void * clientData)
 	// It re-generates the geometry before the callback has time to be re-attached.
 	// As such this band-aid solution is used currently.
 	mapOfVertexArrays[name.asChar()] = 0;
-	cout << "Removed node: " + name << endl;
+	//cout  << "Removed node: " + name << endl;
 }
 
 void timerCallback(float elapsedTime, float lastTime, void *clientData)
 {
-	/*cout << "Time Elapsed: " + to_string(elapsedTime) << endl;*/
+	/*//cout  << "Time Elapsed: " + to_string(elapsedTime) << endl;*/
 	//if (batch.GetMasterHeader()->camChanged)
 	//{
-	//	cout << "CAM WAS CHANGED" << endl;
+	//	//cout  << "CAM WAS CHANGED" << endl;
 	//}
 
 	if ((batch.GetMasterHeader()->meshCount != 0) || (batch.GetMasterHeader()->transformCount != 0) 
 		|| batch.GetMasterHeader()->removedCount != 0 || batch.GetMasterHeader()->camSwitched 
 		|| batch.GetMasterHeader()->matCount !=0 || batch.matSwitchedMap.size() != 0 || batch.GetMasterHeader()->zoomCount != 0
-		|| batch.GetMasterHeader()->camCount !=0 || batch.GetMasterHeader()->numVertsChanged != 0)
+		|| batch.GetMasterHeader()->camCount !=0 || batch.GetMasterHeader()->numMeshChanged != 0)
 	{
 		batch.GetMasterHeader()->msgNr++;
-		cout << "MsgNr: " << batch.GetMasterHeader()->msgNr << endl;
+		/*//cout  << "MsgNr: " << batch.GetMasterHeader()->msgNr << endl;*/
 		producer.send(batch.GetMasterHeader(), sizeof(MasterHeader));
-		cout<< "Mesh Count: " << batch.GetMasterHeader()->meshCount << endl;
-		cout << "Transform Count " << batch.GetMasterHeader()->transformCount << endl;
-		cout << "Cam Count " << batch.GetMasterHeader()->camCount << endl;
-		cout << "Mat Count " << batch.GetMasterHeader()->matCount << endl;
-		cout << "MatSwitched Count " << batch.GetMasterHeader()->matSwitchedCount << endl;
-		cout << "Cam switched " << batch.GetMasterHeader()->camSwitched << endl;
+		/*cout<< "Mesh Count: " << batch.GetMasterHeader()->meshCount << endl;
+		//cout  << "Transform Count " << batch.GetMasterHeader()->transformCount << endl;
+		//cout  << "Cam Count " << batch.GetMasterHeader()->camCount << endl;
+		//cout  << "Mat Count " << batch.GetMasterHeader()->matCount << endl;
+		//cout  << "MatSwitched Count " << batch.GetMasterHeader()->matSwitchedCount << endl;
+		//cout  << "Cam switched " << batch.GetMasterHeader()->camSwitched << endl;*/
 
 		for (const auto& it1 : batch.camMap)
 		{
@@ -1191,27 +1164,27 @@ void timerCallback(float elapsedTime, float lastTime, void *clientData)
 
 			for (int i = 0; i < 6; i++)
 			{
-				cout << it1.second[i] << endl;
+				//cout  << it1.second[i] << endl;
 			}
 			producer.send(it1.second, 6 * sizeof(float));
 		}
 
 		if (batch.GetMasterHeader()->camSwitched)
 		{
-			cout << "Sending Switched Camera: " << batch.getSwitchedName()->c_str() << endl;
+			//cout  << "Sending Switched Camera: " << batch.getSwitchedName()->c_str() << endl;
 			producer.send(batch.getSwitchedName()->c_str(), batch.getSwitchedName()->length());
 		}
 
 		for (int i = 0; i < batch.removeNames.size(); i++)
 		{
-			cout << "SENDING " << batch.removeNames[i].c_str() << endl;
+			//cout  << "SENDING " << batch.removeNames[i].c_str() << endl;
 			producer.send(batch.removeNames[i].c_str(), batch.removeNames[i].length());
 		}
 
 		for (const auto& mat : batch.matMap)
 		{
 			MatHeader head;
-			cout << "Material Name: " << mat.first << endl;
+			//cout  << "Material Name: " << mat.first << endl;
 			//this allows program to crash if name is too long. That's silly.
 			//for (int i = 0; i < mat.first.length(); i++)
 			//{
@@ -1219,8 +1192,8 @@ void timerCallback(float elapsedTime, float lastTime, void *clientData)
 			//}
 			if (mat.second.name != "")
 			{
-				cout << "Sending mat: " << mat.first << endl;
-				cout << "With texture: " << mat.second.name << endl;
+				//cout  << "Sending mat: " << mat.first << endl;
+				//cout  << "With texture: " << mat.second.name << endl;
 				head.isTextured = true;
 				head.lenMatName = mat.first.length();
 				head.lenTextureName = mat.second.name.length();
@@ -1232,7 +1205,7 @@ void timerCallback(float elapsedTime, float lastTime, void *clientData)
 				//{
 				//	head.textureName[i] = mat.second.name.at(i);
 				//}
-				//cout << "Texture Name: " << head.textureName << endl;
+				////cout  << "Texture Name: " << head.textureName << endl;
 				//Allows me to use just one message but at what cost?
 				/*producer.send(&head, sizeof(MatHeader));*/
 			}
@@ -1246,10 +1219,10 @@ void timerCallback(float elapsedTime, float lastTime, void *clientData)
 				producer.send(mat.first.c_str(), mat.first.length());
 				producer.send(mat.second.colors, mat.second.numFloats*sizeof(float));
 
-				cout << "Sending" << endl;
+				//cout  << "Sending" << endl;
 				for (int i = 0; i < mat.second.numFloats; i++)
 				{
-					cout << "c" << i << ": " << mat.second.colors[i] << endl;
+					//cout  << "c" << i << ": " << mat.second.colors[i] << endl;
 				}
 			}
 			
@@ -1266,9 +1239,9 @@ void timerCallback(float elapsedTime, float lastTime, void *clientData)
 			meshHead.indexCount = nr.second.GetIndexCount();
 			meshHead.nrOfVerts = nr.second.GetNrOfVerts();
 			string s(meshHead.meshName);
-			cout << "MeshName: " << s << endl;
-			cout << "IndexCount: " << meshHead.indexCount << endl;
-			cout << "nrOfVerts: " << meshHead.nrOfVerts << endl;
+			//cout  << "MeshName: " << s << endl;
+			//cout  << "IndexCount: " << meshHead.indexCount << endl;
+			//cout  << "nrOfVerts: " << meshHead.nrOfVerts << endl;
 
 			producer.send(&meshHead, sizeof(MeshHeader));
 			producer.send(nr.second.GetIndicies(), meshHead.indexCount * sizeof(int));
@@ -1279,8 +1252,8 @@ void timerCallback(float elapsedTime, float lastTime, void *clientData)
 
 		for (const auto& nr : batch.matSwitchedMap)
 		{
-			cout << "Mesh: " << nr.first << endl;
-			cout << "Switched material to: " << nr.second << endl;
+			//cout  << "Mesh: " << nr.first << endl;
+			//cout  << "Switched material to: " << nr.second << endl;
 			MatSwitchedHeader lengths;
 
 			lengths.lenMeshName = nr.first.length();
@@ -1293,14 +1266,14 @@ void timerCallback(float elapsedTime, float lastTime, void *clientData)
 		int nrOfTransformsSent = 0;
 		for (const auto& it2 : batch.transformMap)
 		{
-			//cout << "---------------------------------" << endl;
-			//cout << "SENDING TRANSFORM FOR: " << endl;
-			//cout << it2.first << endl;
+			////cout  << "---------------------------------" << endl;
+			////cout  << "SENDING TRANSFORM FOR: " << endl;
+			////cout  << it2.first << endl;
 
-			//cout << "Translation: " << it2.second[0] << "," << it2.second[1] << "," << it2.second[2] << endl;
-			//cout << "scale: " << it2.second[3] << "," << it2.second[4] << "," << it2.second[5] << endl;
-			//cout << "Rotation: " << it2.second[6] << "," << it2.second[7] << "," << it2.second[8] << endl;
-			//cout << "---------------------------------" << endl;
+			////cout  << "Translation: " << it2.second[0] << "," << it2.second[1] << "," << it2.second[2] << endl;
+			////cout  << "scale: " << it2.second[3] << "," << it2.second[4] << "," << it2.second[5] << endl;
+			////cout  << "Rotation: " << it2.second[6] << "," << it2.second[7] << "," << it2.second[8] << endl;
+			////cout  << "---------------------------------" << endl;
 			/*int nr = 1;
 			producer.send(&nr, sizeof(int));*/
 			producer.send(it2.first.c_str(), it2.first.length());
@@ -1310,7 +1283,7 @@ void timerCallback(float elapsedTime, float lastTime, void *clientData)
 
 		for (const auto& vertMeshIt : batch.vertMap)
 		{
-			cout << "SENDING CHANGED VERTS FOR MESH: " << vertMeshIt.first << endl;
+			/*//cout  << "SENDING CHANGED VERTS FOR MESH: " << vertMeshIt.first << endl;*/
 			int len = vertMeshIt.first.length();
 			//Send name and size of name for mesh.
 			producer.send(&len, sizeof(int));
@@ -1321,14 +1294,32 @@ void timerCallback(float elapsedTime, float lastTime, void *clientData)
 
 			for (const auto& vertIt : vertMeshIt.second)
 			{
-				/*cout << "Point ID: " << vertIt.first << endl;*/
+				/*//cout  << "Point ID: " << vertIt.first << endl;*/
 				//Send the vertex ID
 				producer.send(&vertIt.first, sizeof(int));
-				//Send the (local) transform coordinates.
-				producer.send(vertIt.second, sizeof(float) * 3);
+
+				int nrFloats;
+				
+				//Must explicitly make it float to avoid rounding errors.
+				float val = 0.123456;
+
+				if ((vertIt.second[3] == val) && (vertIt.second[4] == val) && (vertIt.second[5] == val))
+				{
+			/*		cout << "Send pos" << endl;*/
+					nrFloats = 3;
+					producer.send(&nrFloats, sizeof(int));
+					producer.send(vertIt.second, sizeof(float) * 3);
+				}
+				else
+				{
+					//cout << "Send all" << endl;
+					nrFloats = 8;
+					producer.send(&nrFloats, sizeof(int));
+					producer.send(vertIt.second, sizeof(float) * 8);
+				}
 				//for (int i = 0; i < 3; i++)
 				//{
-				//	cout << i << ": " << vertIt.second[i] << endl;
+				//	//cout  << i << ": " << vertIt.second[i] << endl;
 				//}
 			}
 		}
@@ -1344,8 +1335,8 @@ void timerCallback(float elapsedTime, float lastTime, void *clientData)
 			producer.send(zoomIt.second, sizeof(float)*2);
 		}
 
-		cout << "Sent nr: " << nrOfTransformsSent << endl;
-		cout << endl;
+		/*//cout  << "Sent nr: " << nrOfTransformsSent << endl;
+		//cout  << endl;*/
 		batch.Reset();
 	}
 }
@@ -1360,23 +1351,23 @@ void nameChanged(MObject &node, const MString &prevName, void *clientData)
 		name = dependNode.name();
 		if (prevName != name)
 		{
-			cout << "Node name changed!" << endl;
-			cout << "Node: " + prevName << endl;
-			cout << "Is now Node: " + name << endl;
+			//cout  << "Node name changed!" << endl;
+			//cout  << "Node: " + prevName << endl;
+			//cout  << "Is now Node: " + name << endl;
 		}
 	}
 }
 
 void viewChangedCB(const MString& str, MObject &node, void* clientData)
 {
-	cout << "CALLED!!" << endl;
-	cout << str << endl;
+	//cout  << "CALLED!!" << endl;
+	//cout  << str << endl;
 
 	MFnDagNode dagSearch(node);
 	MObject handle = dagSearch.parent(0);
 	MFnDagNode parent(handle);
 
-	cout << "Gives Node: " << parent.name().asChar() << endl;
+	//cout  << "Gives Node: " << parent.name().asChar() << endl;
 	std::string tmp(parent.name().asChar());
 	batch.SwitchedCamera(tmp);
 }
@@ -1388,21 +1379,21 @@ MTransformationMatrix moveStartMatrix;
 
 void cameraAttributeChanged(MNodeMessage::AttributeMessage msg, MPlug &plug, MPlug &otherPlug, void* x)
 {
-	/*cout << plug.name() << ":" << plug.partialName() << endl;*/
+	/*//cout  << plug.name() << ":" << plug.partialName() << endl;*/
 	if(msg & MNodeMessage::kAttributeSet)
 	{
-		/*cout << "Cam Transform Changed!" << endl;*/
+		/*//cout  << "Cam Transform Changed!" << endl;*/
 		MObject transformNode = plug.node();
 
 		if (transformNode.hasFn(MFn::kTransform))
 		{
 			MFnDagNode dagNode(plug.node());
 			//How do filter away rotation translate, while keeping panning translate
-			/*cout << plug.name() << ":" << plug.partialName() << endl;*/
+			/*//cout  << plug.name() << ":" << plug.partialName() << endl;*/
 			if ((plug.partialName() == "rpt") || (plug.partialName() == "t")
 				|| (plug.partialName() == "tx") || (plug.partialName() == "ty") || (plug.partialName() == "tz"))
 			{
-				/*cout << plug.name() << ":" << plug.partialName() << endl;*/
+				/*//cout  << plug.name() << ":" << plug.partialName() << endl;*/
 				MDagPath tNodeDag;
 				dagNode.getPath(tNodeDag);
 				MMatrix worldMat = tNodeDag.inclusiveMatrix();
@@ -1417,31 +1408,31 @@ void cameraAttributeChanged(MNodeMessage::AttributeMessage msg, MPlug &plug, MPl
 					camMoveStartPos[i] = roundf(camMoveStartPos[i] * 1000.0f) / 1000.0f;
 					tmp[i] = roundf(tmp[i] * 1000.0f) / 1000.0f;
 
-					/*cout << "Quat: " << quat[i] << " Start: " << quatStartPos[i] << endl;*/
+					/*//cout  << "Quat: " << quat[i] << " Start: " << quatStartPos[i] << endl;*/
 				}
 
-				//cout << "Checking pos" << endl;
+				////cout  << "Checking pos" << endl;
 				//for (int i = 0; i < 3; i++)
 				//{
-				//	cout << i << ": " << camMoveStartPos[i] << endl;
+				//	//cout  << i << ": " << camMoveStartPos[i] << endl;
 				//}
-				//cout << "Temp:" << endl;
+				////cout  << "Temp:" << endl;
 				//for (int i = 0; i < 3; i++)
 				//{
-				//	cout << i << ": " << tmp[i] << endl;
+				//	//cout  << i << ": " << tmp[i] << endl;
 				//}
-		/*		cout << "Current Mat:" << endl;
-				cout << aMat.asMatrix() << endl;
-				cout << "Moved Mat:" << endl;
-				cout << moveStartMatrix.asMatrix() << endl;*/
-				//cout << "Compare" << endl;
+		/*		//cout  << "Current Mat:" << endl;
+				//cout  << aMat.asMatrix() << endl;
+				//cout  << "Moved Mat:" << endl;
+				//cout  << moveStartMatrix.asMatrix() << endl;*/
+				////cout  << "Compare" << endl;
 				//Rounding off for inconsequential minor things.
 				//for (int i = 0; i < 3; i++)
 				//{
 				//	quat[i] = roundf(quat[i] * 1000.0f) / 1000.0f;
 				//	rotStartPos[i] = roundf(rotStartPos[i] * 1000.0f) / 1000.0f;
 
-				//	/*cout << "Quat: " << quat[i] << " Start: " << quatStartPos[i] << endl;*/
+				//	/*//cout  << "Quat: " << quat[i] << " Start: " << quatStartPos[i] << endl;*/
 				//}
 
 				//for (int i = 0; i < 4; i++)
@@ -1464,12 +1455,12 @@ void cameraAttributeChanged(MNodeMessage::AttributeMessage msg, MPlug &plug, MPl
 				{
 					//If the plug is translation and rotational values haven't changed we enter here.
 					//This way we enter during panning but avoid the translation plug while rotating.
-					/*cout << "ENTERED" << endl;*/
+					/*//cout  << "ENTERED" << endl;*/
 					SendTransform(transformNode);
 					producer.send(batch.GetMasterHeader(), sizeof(MasterHeader));
 					for (const auto& it2 : batch.transformMap)
 					{
-						/*cout << it2.first << endl;*/
+						/*//cout  << it2.first << endl;*/
 						producer.send(it2.first.c_str(), it2.first.length());
 						producer.send(it2.second, 10 * sizeof(double));
 					}
@@ -1479,12 +1470,12 @@ void cameraAttributeChanged(MNodeMessage::AttributeMessage msg, MPlug &plug, MPl
 				{
 					// If the camera has rotated we want the final value which is given by the "rpt" plug.
 					// I may have to add the translation check too for the "bug"
-					/*cout << "ENTERED ROTATION" << endl;*/
+					/*//cout  << "ENTERED ROTATION" << endl;*/
 					SendTransform(transformNode);
 					producer.send(batch.GetMasterHeader(), sizeof(MasterHeader));
 					for (const auto& it2 : batch.transformMap)
 					{
-						/*cout << it2.first << endl;*/
+						/*//cout  << it2.first << endl;*/
 						producer.send(it2.first.c_str(), it2.first.length());
 						producer.send(it2.second, 10 * sizeof(double));
 					}
@@ -1492,12 +1483,12 @@ void cameraAttributeChanged(MNodeMessage::AttributeMessage msg, MPlug &plug, MPl
 				}
 				else
 				{
-					/*cout << "NO ENTRY" << endl;*/
+					/*//cout  << "NO ENTRY" << endl;*/
 				}
 			}
 		}
 	}
-	/* cout << plug.name() << ": " << plug.partialName() << endl;*/
+	/* //cout  << plug.name() << ": " << plug.partialName() << endl;*/
 }
 
 void SendCam(MObject node)
@@ -1515,7 +1506,7 @@ void SendCam(MObject node)
 		// As such we can extract the height of the projection matrix using simple equation.
 		// 2/height = [1][1] -> 2/[1][1] = height.
 		arr[2] = 2/cam.projectionMatrix()[1][1];
-		/*cout << "HEIGHT HERE: " <<cam.projectionMatrix()[2][2] << endl;*/
+		/*//cout  << "HEIGHT HERE: " <<cam.projectionMatrix()[2][2] << endl;*/
 	}
 	else
 	{
@@ -1531,7 +1522,7 @@ void SendCam(MObject node)
 	MFnDagNode parent(handle);
 
 	batch.SetCamera(arr, parent.name().asChar());
-	/*cout <<
+	/*//cout  <<
 		cam.aspectRatio() << ", " <<
 		cam.farClippingPlane() << ", " <<
 		cam.nearClippingPlane() << ", " <<
@@ -1545,10 +1536,10 @@ void camMoveStart(MObject &node, void *clientData)
 	MFnDagNode dagSearch(node);
 	MObject handle = dagSearch.parent(0);
 	MFnDagNode parent(handle);
-	cout << "____________________________________________________________" << endl;
-	cout << "CAM MOVE START" << endl;
-	cout << "For " << parent.name() << endl;
-	//cout << "____________________________________________________________" << endl;
+	//cout  << "____________________________________________________________" << endl;
+	//cout  << "CAM MOVE START" << endl;
+	//cout  << "For " << parent.name() << endl;
+	////cout  << "____________________________________________________________" << endl;
 
 	MDagPath tNodeDag;
 	parent.getPath(tNodeDag);
@@ -1562,25 +1553,20 @@ void camMoveStart(MObject &node, void *clientData)
 
 	MTransformationMatrix::RotationOrder wat;
 	aMat.getRotation(rotStartPos, wat);
-	cout << wat << endl;
-	cout << "____________________________________________________________" << endl;
+	//cout  << wat << endl;
+	//cout  << "____________________________________________________________" << endl;
 	/*aMat.getRotationQuaternion(quatStartPos[0], quatStartPos[1], quatStartPos[2], quatStartPos[3]);*/
 	//for (int i = 0; i < 3; i++)
 	//{
-	//	cout << i << ": " << camMoveStartPos[i] << ", ";
+	//	//cout  << i << ": " << camMoveStartPos[i] << ", ";
 	//}
-	//cout << endl;
-
-}
-
-void viewPortChanged(MNodeMessage::AttributeMessage msg, MPlug &plug, MPlug &otherPlug, void* x)
-{
+	////cout  << endl;
 
 }
 
 void zoomCB(MNodeMessage::AttributeMessage msg, MPlug &plug, MPlug &otherPlug, void* x)
 {
-	cout << plug.name() << ":" << plug.partialName() << endl;
+	//cout  << plug.name() << ":" << plug.partialName() << endl;
 	if (plug.partialName() == "ow")
 	{
 		/*SendCam(plug.node());*/
@@ -1598,10 +1584,10 @@ void zoomCB(MNodeMessage::AttributeMessage msg, MPlug &plug, MPlug &otherPlug, v
 		size[1] = 2 / cam.projectionMatrix()[1][1];
 
 		batch.SetCamOrthoZoom((string)parent.name().asChar(), size);
-		cout << "The heck: " << cam.orthoWidth() << endl;
-		cout << "Horizontal: " << cam.horizontalFieldOfView() *(180 / 3.14159265359) << endl;
-		cout << "Vertical: " << cam.verticalFieldOfView()*(180 / 3.14159265359) << endl;
-		cout << "Aspect ratio: " << cam.aspectRatio() << endl;
+		//cout  << "The heck: " << cam.orthoWidth() << endl;
+		//cout  << "Horizontal: " << cam.horizontalFieldOfView() *(180 / 3.14159265359) << endl;
+		//cout  << "Vertical: " << cam.verticalFieldOfView()*(180 / 3.14159265359) << endl;
+		//cout  << "Aspect ratio: " << cam.aspectRatio() << endl;
 	}
 }
 
@@ -1674,7 +1660,7 @@ void addCallbacksToExistingNodes()
 		int nrOfPanels = modelPanels.length();
 		for (int i = 0; i < nrOfPanels; i++)
 		{
-			/*cout << modelPanels[i] << endl;*/
+			/*//cout  << modelPanels[i] << endl;*/
 			callbackIdArray.append(MUiMessage::addCameraChangedCallback(modelPanels[i], viewChangedCB, NULL, &status));
 			/*callbackIdArray.append(MUiMessage::add3dViewPreRenderMsgCallback(modelPanels[i], attempt, NULL, &status));*/
 			M3dView view;
@@ -1696,10 +1682,10 @@ void addCallbacksToExistingNodes()
 		MObject handle = dagSearch.parent(0);
 		MFnDagNode parent(handle);
 
-		/*cout <<"Camera Name: " << dagSearch.name() << endl;*/
-		//cout << "HERE" << endl;
-		//cout << parent.name().asChar() << endl;
-		//cout << dagSearch.name().asChar() << endl;
+		/*//cout  <<"Camera Name: " << dagSearch.name() << endl;*/
+		////cout  << "HERE" << endl;
+		////cout  << parent.name().asChar() << endl;
+		////cout  << dagSearch.name().asChar() << endl;
 
 		SendCam(camIterator.thisNode());
 
@@ -1713,7 +1699,7 @@ void addCallbacksToExistingNodes()
 		camIterator.next();
 	}
 
-	cout << "nrOf3DViews: " << M3dView::numberOf3dViews() << endl;
+	//cout  << "nrOf3DViews: " << M3dView::numberOf3dViews() << endl;
 	M3dView test = M3dView::active3dView();
 	//for (int i = 0; i < M3dView::numberOf3dViews(); i++)
 	//{
@@ -1726,11 +1712,11 @@ void addCallbacksToExistingNodes()
 	MDagPath cam;
 	test.getCamera(cam);
 	MFnDagNode node(cam);
-	cout << "Cam Name: " << node.name().asChar() << endl;
+	//cout  << "Cam Name: " << node.name().asChar() << endl;
 	MObject handle = node.parent(0);
 	MFnDagNode parent(handle);
 
-	cout << "PARENT NAME: " << parent.name() << endl;
+	//cout  << "PARENT NAME: " << parent.name() << endl;
 	batch.SwitchedCamera((std::string)parent.name().asChar());
 
 	while (!matIterator.isDone())
@@ -1759,7 +1745,7 @@ void selectionChangedCB(void* x)
 	{
 		isExtruding = false;
 	}
-	/*cout << "SELECTION CHANGED!" << endl;*/
+	/*//cout  << "SELECTION CHANGED!" << endl;*/
 }
 /*
  * Plugin entry point
@@ -1779,11 +1765,11 @@ EXPORT MStatus initializePlugin(MObject obj) {
 		return res;
 	}  
 	
-	// redirect cout to cerr, so that when we do cout goes to cerr
+	// redirect //cout  to cerr, so that when we do //cout  goes to cerr
 	// in the maya output window (not the scripting output!)
 	std::cout.set_rdbuf(MStreamUtils::stdOutStream().rdbuf());
 	std::cerr.set_rdbuf(MStreamUtils::stdErrorStream().rdbuf());
-	cout << "Plugin loaded ===========================" << endl;
+	cout  << "Plugin loaded ===========================" << endl;
 	
 	// register callbacks here for
 	callbackIdArray.append(MDGMessage::addNodeAddedCallback(nodeAdded, "dependNode", NULL, &status));
@@ -1795,6 +1781,7 @@ EXPORT MStatus initializePlugin(MObject obj) {
 
 	addCallbacksToExistingNodes();
 
+	changedVerts.reserve(3000);
 	// a handy timer, courtesy of Maya
 	gTimer.clear();
 	gTimer.beginTimer();
@@ -1806,7 +1793,7 @@ EXPORT MStatus initializePlugin(MObject obj) {
 EXPORT MStatus uninitializePlugin(MObject obj) {
 	MFnPlugin plugin(obj);
 
-	cout << "Plugin unloaded =========================" << endl;
+	cout  << "Plugin unloaded =========================" << endl;
 
 	MMessage::removeCallbacks(callbackIdArray);
 
