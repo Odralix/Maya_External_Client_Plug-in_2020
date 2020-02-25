@@ -93,6 +93,7 @@ void MayaBatchOutput::SetMaterial(std::string & matName, float * vals, int len)
 	}
 	matMap[matName].colors = new float[len];
 	matMap[matName].numFloats = len;
+
 	for (int i = 0; i < len; i++)
 	{
 		matMap[matName].colors[i] = vals[i];

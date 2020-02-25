@@ -45,13 +45,6 @@ void SendTransform(MObject transformNode)
 {
 	MFnDependencyNode nameFetch(transformNode);
 
-	////cout  << nameFetch.name() << " Transform changed!" << endl;
-
-	//Local transform
-	//MFnTransform getTransform(transformNode);
-
-	//MMatrix tMat = getTransform.transformation().asMatrix();
-
 	//Global Transform:
 	MFnDagNode path(transformNode);
 	MDagPath tNodeDag;
@@ -115,8 +108,6 @@ void SendTransform(MObject transformNode)
 void nodeTransformChanged(MNodeMessage::AttributeMessage msg, MPlug &plug, MPlug &otherPlug, void* x)
 {
 	MFnDependencyNode nameFetch(plug.node());
-
-	/*//cout  << "TRANSFORM CALLBACK FOR " << nameFetch.name() << endl;*/
 
 	if (msg & MNodeMessage::kAttributeSet)
 	{
@@ -204,7 +195,7 @@ void SendMaterial(MObject &node)
 		rgb[1] = color.g;
 		rgb[2] = color.b;
 
-		batch.SetMaterial((std::string)funcMat.name().asChar(), rgb, 3);
+		/*batch.SetMaterial((std::string)funcMat.name().asChar(), rgb, 3);*/
 		/*//cout  << "A: " << color.a << endl;*/
 	}
 
@@ -263,7 +254,6 @@ void SendMaterialName(MObject &node)
 				//cout  << "Material Name: " << funcMat.name().asChar() << endl;
 
 				batch.SetMatSwitched((std::string)getParentDagNodeName(node).asChar(), (std::string) funcMat.name().asChar());
-				//batch.meshMap[(std::string)parent.name().asChar()].SetMatName(funcMat.name().asChar(), funcMat.name().length());
 			}
 		}
 	}
@@ -298,26 +288,8 @@ void SendMaterialNameMatInput(MObject &node)
 				MFnDependencyNode mesh(meshPlugs[0].node());
 
 				batch.SetMatSwitched((std::string)getParentDagNodeName(meshPlugs[0].node()).asChar(), (std::string) mat.name().asChar());
-				//batch.SetMatSwitched()
 			}
 		}
-
-		/*shadingGroup.findPlug("dagSetMembers", &status);*/
-
-		//if (status == MS::kSuccess)
-		//{
-		//	//cout  << "Found DagSetMembers!" << endl;
-		//}
-
-		/*//cout  << "NUMBER DAGSETMEMBERS: " << << endl;*/
-
-		//MPlugArray meshPlugs;
-		//dagSetMembers.connectedTo(meshPlugs, true, false);
-		//for (int i = 0; i < meshPlugs.length(); i++)
-		//{
-		//	MFnDependencyNode mesh(meshPlugs[i].node());
-		//	//cout  << mesh.name() << endl;
-		//}
 	}
 }
 
@@ -362,18 +334,9 @@ void SetupMaterials(MObject &node)
 				//cout  <<"Material Name: " << funcMat.name().asChar() << endl;
 				if (mats[0].node().hasFn(MFn::kLambert))
 				{
-					/*MPlugArray rgb;
-					MFnLambertShader shader(mats[0].node());*/
-					/*shader.findPlug("color").connectedTo(rgb, true, false);*/
-					
-
 					MPlug plug;
 					plug = funcMat.findPlug("color", true, &status);
 
-					if (plug.isArray())
-					{
-						//cout  << "I'm ARRAY" << endl;
-					}
 					MColor color;
 
 					//cout  << plug.name() << endl;
@@ -393,12 +356,10 @@ void SetupMaterials(MObject &node)
 					{
 						if (plugs[j].node().apiType() == MFn::kFileTexture)
 						{
-							//cout  << "hit "<< j << endl;
 							MFnDependencyNode dep(plugs[j].node());
 							MPlug ftn = dep.findPlug("ftn");
 							//cout  << "plugName: " << ftn.name().asChar() << endl;
 							ftn.getValue(textureName);
-						/*	textureName = dep.name();*/
 						}
 					}
 
@@ -443,12 +404,6 @@ void SetupMaterials(MObject &node)
 			}
 		}
 	}
-}
-
-void faceVertMove(MNodeMessage::AttributeMessage msg, MPlug &plug, MPlug &otherPlug, void* x)
-{
-	//cout  << "ENTERED FACEVERT" << endl;
-	//cout  << plug.name() << ": " << plug.partialName() << endl;
 }
 
 //For use only on MObjects with a connected MFn::kMesh.
@@ -522,7 +477,6 @@ void SendMesh(MObject Mnode)
 		MItMeshFaceVertex iterator(Mnode, &status);
 		while (!iterator.isDone())
 		{
-			callbackIdArray.append(MNodeMessage::addAttributeChangedCallback(iterator.currentItem(), faceVertMove, NULL, &status));
 			iterator.position(MSpace::kWorld, &status).get(posArr[i]);
 			iterator.getNormal(normals, MSpace::kObject);
 			float2 temp;
@@ -1049,6 +1003,7 @@ void timerCallback(float elapsedTime, float lastTime, void *clientData)
 				head.lenTextureName = mat.second.name.length();
 				producer.send(&head, sizeof(head));
 
+				cout << "Texture Material Name: " << mat.first << endl;
 				producer.send(mat.first.c_str(), mat.first.length());
 				producer.send(mat.second.name.c_str(), mat.second.name.length());
 				//for (int i = 0; i < mat.second.name.length(); i++)
@@ -1066,6 +1021,7 @@ void timerCallback(float elapsedTime, float lastTime, void *clientData)
 				head.lenTextureName = mat.second.name.length();
 				producer.send(&head, sizeof(head));
 
+				cout << "Material Name: " << mat.first << endl;
 				producer.send(mat.first.c_str(), mat.first.length());
 				producer.send(mat.second.colors, mat.second.numFloats*sizeof(float));
 
