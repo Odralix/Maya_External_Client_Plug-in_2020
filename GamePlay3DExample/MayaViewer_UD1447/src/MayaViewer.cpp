@@ -39,41 +39,6 @@ void MayaViewer::initialize()
 	lightNode->translate(Vector3(0, 1, 5));
 
 	msgDirector();
-
-	//MasterHeader head1;
-	//size_t Mlen;
-	//consumer.recv((char*)&head1, Mlen);
-
-	//MeshHeader head = readHeader();
-	//Mesh* mesh1 = setupInputMesh(head);
-
-	////std::string name(head.meshName);
-
-	//Model* models[gModelCount];
-	//Material* mats[gModelCount];
-	//Texture::Sampler* samplers[gModelCount];
-
-	//char nodeName[42] = {};
-	//for (int i = 0; i < gModelCount; i++)
-	//{
-	//	models[i] = Model::create(mesh1);
-	//	mats[i] = models[i]->setMaterial( "res/shaders/textured.vert", "res/shaders/textured.frag", "POINT_LIGHT_COUNT 1");
-	//	mats[i]->setParameterAutoBinding("u_worldViewProjectionMatrix", "WORLD_VIEW_PROJECTION_MATRIX");
-	//	mats[i]->setParameterAutoBinding("u_inverseTransposeWorldViewMatrix", "INVERSE_TRANSPOSE_WORLD_VIEW_MATRIX");
-	//	mats[i]->getParameter("u_ambientColor")->setValue(Vector3(0.1f, 0.1f, 0.2f));
-	//	mats[i]->getParameter("u_pointLightColor[0]")->setValue(lightNode->getLight()->getColor());
-	//	mats[i]->getParameter("u_pointLightPosition[0]")->bindValue(lightNode, &Node::getTranslationWorld);
-	//	mats[i]->getParameter("u_pointLightRangeInverse[0]")->bindValue(lightNode->getLight(), &Light::getRangeInverse);
-	//	samplers[i] = mats[i]->getParameter("u_diffuseTexture")->setValue("res/png/crate.png", true);
-	//	samplers[i]->setFilterMode(Texture::LINEAR_MIPMAP_LINEAR, Texture::LINEAR);
-	//	mats[i]->getStateBlock()->setCullFace(true);
-	//	mats[i]->getStateBlock()->setDepthTest(true);
-	//	mats[i]->getStateBlock()->setDepthWrite(true);
-	//	sprintf(nodeName, head.meshName, i);
-	//	Node* node = _scene->addNode(nodeName);
-	//	node->setDrawable(models[i]);
-	//	SAFE_RELEASE(models[i]);
-	//}
 }
 
 void MayaViewer::finalize()
@@ -83,45 +48,23 @@ void MayaViewer::finalize()
 
 void MayaViewer::update(float elapsedTime)
 {
-	_scene->setAmbientColor(0.5, 0.5, 0.5);
-	static float totalTime = 0;
-	totalTime += elapsedTime;
-	float step = 360.0 / float(gModelCount);
-	char name[10] = {};
-	//for (int i = 0; i < gModelCount; i++)
-	//{
-	//	sprintf(name, "cube%d", i);
-	//	Node* node = _scene->findNode(name);
-	//	if (node) {
-	//		node->setScale(0.3f);
-	//		node->setTranslation(
-	//			cosf(MATH_DEG_TO_RAD(((int)totalTime / 10) % 360 + i * step))*5.0, 
-	//			sinf(MATH_DEG_TO_RAD(((int)totalTime / 10) % 360 + i * step))*5.0,
-	//			0.0);
-	//	}
-	//	if (i%2)
-	//		node->rotateX(elapsedTime / 1000.f);
-	//}	
-
 	Node* camnode = _scene->getActiveCamera()->getNode();
-	//if (gKeys[Keyboard::KEY_W])
-	//	camnode->translateForward(0.5);
-	//if (gKeys[Keyboard::KEY_S])
-	//	camnode->translateForward(-0.5);
-	//if (gKeys[Keyboard::KEY_A])
-	//	camnode->translateLeft(0.5);
-	//if (gKeys[Keyboard::KEY_D])
-	//	camnode->translateLeft(-0.5);
+	if (gKeys[Keyboard::KEY_W])
+		camnode->translateForward(0.5);
+	if (gKeys[Keyboard::KEY_S])
+		camnode->translateForward(-0.5);
+	if (gKeys[Keyboard::KEY_A])
+		camnode->translateLeft(0.5);
+	if (gKeys[Keyboard::KEY_D])
+		camnode->translateLeft(-0.5);
 
-	//MY STUFF__________________________________________________________
-	//char stuff[1024*3] = { 0 };
-	/*consumer.recv(static_cast<char*>(stuff), size);*/
+	//Handle all incoming messages.
 	msgDirector();
 
-	//if (gMousePressed) {
-	//	camnode->rotate(camnode->getRightVectorWorld(), MATH_DEG_TO_RAD(gDeltaY / 10.0));
-	//	camnode->rotate(camnode->getUpVectorWorld(), MATH_DEG_TO_RAD(gDeltaX / 5.0));
-	//}
+	if (gMousePressed) {
+		camnode->rotate(camnode->getRightVectorWorld(), MATH_DEG_TO_RAD(gDeltaY / 10.0));
+		camnode->rotate(camnode->getUpVectorWorld(), MATH_DEG_TO_RAD(gDeltaX / 5.0));
+	}
 }
 
 void MayaViewer::render(float elapsedTime)
@@ -162,7 +105,6 @@ void MayaViewer::keyEvent(Keyboard::KeyEvent evt, int key)
 		switch (key)
 		{
 		case Keyboard::KEY_P:
-			msgDirector();
 			break;
 		};
 	}
@@ -295,39 +237,6 @@ Mesh * MayaViewer::setupInputMesh(MeshHeader &mHead)
 
 	vertexRef[mHead.meshName] = verts;
 
-	//size_t a = inSize / sizeof(int);
-
-	//for (int i = 0; i < a; i++)
-	//{
-	//	int anInt = arr[i];
-	//	std::cout << anInt << std::endl;
-	//}
-
-	//size_t b = vertSize / sizeof(float);
-
-	//std::string checker;
-	//int c = 0;
-
-	//for (int i = 0; i < mHead.indexCount; i++)
-	//{
-	//	checker.append(std::to_string(arr[i]));
-	//	checker.append(" ");
-	//}
-
-	//checker = "";
-
-	//for (int i = 0; i < b; i++)
-	//{
-	//	checker.append(std::to_string(verts[i]));
-	//	checker.append(" ");
-	//	c++;
-	//	if (c == 8)
-	//	{
-	//		checker = "";
-	//		c = 0;
-	//	}
-	//}
-
 	return createImportMesh(verts, arr, mHead.nrOfVerts, mHead.indexCount);
 }
 
@@ -355,6 +264,7 @@ void MayaViewer::msgDirector()
 		consumer.recv((char*)&head, Mlen);
 		prevOffset = Mlen;
 
+		//Apply Renaming changes
 		if (head.numRenamed != 0)
 		{
 			for (int i = 0; i < head.numRenamed; i++)
@@ -398,6 +308,7 @@ void MayaViewer::msgDirector()
 			}
 		}
 
+		//Add new Cameras
 		if (head.camCount > 0)
 		{
 			size_t nLen;
@@ -452,6 +363,7 @@ void MayaViewer::msgDirector()
 			}
 		}
 
+		//Switch between existing cameras.
 		if (head.camSwitched)
 		{
 			char name[42] = {};
@@ -466,7 +378,7 @@ void MayaViewer::msgDirector()
 			}
 		}
 
-		//Should be moved to last in case transform calls make it in.
+		//Delete objects. (Should probably be last check
 		if (head.removedCount > 0)
 		{
 			size_t nLen;
@@ -488,6 +400,7 @@ void MayaViewer::msgDirector()
 			}
 		}
 
+		//Add new materials
 		if (head.matCount > 0)
 		{
 			for (int i = 0; i < head.matCount; i++)
@@ -551,7 +464,7 @@ void MayaViewer::msgDirector()
 			//std::cout << mName << std::endl;
 		}
 
-		//If unnecesary since mayaRun already checks
+		//Add Meshes
 		if (head.meshCount > 0)
 		{
 			delete[] inMeshArr;
@@ -566,6 +479,8 @@ void MayaViewer::msgDirector()
 				}
 				Model *mesh = Model::create(setupInputMesh(inMeshArr[i]));
 
+				//**************************************Adding two Seperate Materials to every single mesh***************************************
+				//Must be done since Gameplay3D appears to lack the notion of Global materials. Which is...Frustrating as a TA.
 				Material * mat;
 				Texture::Sampler* sampler;
 				char nodeName[42] = {};
@@ -583,7 +498,7 @@ void MayaViewer::msgDirector()
 				mat->getStateBlock()->setDepthTest(true);
 				mat->getStateBlock()->setDepthWrite(true);
 
-
+				//Material map to keep track of all textured materials.
 				individualMatMap[(std::string)inMeshArr[i].meshName] = mat;
 
 				Material* mat2;
@@ -600,7 +515,10 @@ void MayaViewer::msgDirector()
 				mat2->getStateBlock()->setDepthTest(true);
 				mat2->getStateBlock()->setDepthWrite(true);
 
+				//Material map to keep track of all untextured materials
 				individualColMatMap[(std::string)inMeshArr[i].meshName] = mat2;
+
+				//**************************************Adding two Seperate Materials to every single mesh***************************************
 
 				/*mesh->setMaterial(materialMap["lambert2"]);*/
 				mesh->setMaterial(mat);
@@ -611,6 +529,7 @@ void MayaViewer::msgDirector()
 			}
 		}
 
+		//Handle all material switching
 		if (head.matSwitchedCount > 0)
 		{
 			for (int i = 0; i < head.matSwitchedCount; i++)
@@ -633,10 +552,8 @@ void MayaViewer::msgDirector()
 
 				if (_scene->findNode(meshName.c_str()))
 				{
-					/*dynamic_cast<Model*>(_scene->findNode(meshName.c_str())->getDrawable())->setMaterial(materialMap[matName.c_str()]);*/
 					Model* mesh = dynamic_cast<Model*>(_scene->findNode(meshName.c_str())->getDrawable());
-					/*std::cout << mesh->getMaterial() << std::endl;*/
-					/*materialMap[matName.c_str()].*/
+
 					if (materialMap[matName.c_str()]->getParameter("u_diffuseTexture")->getSampler() != nullptr)
 					{
 						//The new material has a texture
@@ -676,6 +593,7 @@ void MayaViewer::msgDirector()
 			}
 		}
 
+		//Handle all transform changes except individual verts.
 		if (head.transformCount > 0)
 		{
 			size_t nameLength;
@@ -692,13 +610,14 @@ void MayaViewer::msgDirector()
 				}
 				if (prevName[0] == '0')
 				{
-					std::cout << "Heck";
+					std::cout << "No name found";
 				}
 				consumer.recv((char*)transform, tLen);
 				applyTransformation(name, transform);
 			}
 		}
 
+		//Handles all individual vertex changes (Including extrudes after inital vertex addition)
 		if (head.numMeshChanged > 0)
 		{
 			for (int i = 0; i < head.numMeshChanged; i++)
@@ -728,12 +647,15 @@ void MayaViewer::msgDirector()
 					int vertID = -1;
 					consumer.recv((char*)&vertID, size);
 
+					//Sometimes not all vertex data is changed. 
+					//Only Pos for example
 					int nrFloats = -1;
 					consumer.recv((char*)&nrFloats, size);
 
 					float* vertData = new float[nrFloats];
 					consumer.recv((char*)vertData, size);
 
+					//Each vertex has 8 values.
 					int vertStep = vertID * 8;
 
 					for (int k = 0; k < nrFloats; k++)
@@ -742,26 +664,12 @@ void MayaViewer::msgDirector()
 					}
 
 					delete[] vertData;
-
-		/*			vertexRef[meshName][vertStep] = vertData[0];
-					vertexRef[meshName][vertStep + 1] = vertData[1];
-					vertexRef[meshName][vertStep + 2] = vertData[2];*/
-
-					/*mesh->getMesh()->getVertexFormat().getElement(vertID)*/
-					// As of now I am unable to retrieve the verticies through gameplay3D's interface.
-					// As such I will store the array of float values for my verts seperately when I input them for now.
-					/*mesh->getMesh().*/
-					/*const gameplay::VertexFormat::Element bark = mesh->getMesh()->getVertexFormat().getElement(0);*/
-					/*mesh->getMesh()->getVertexBuffer()*/
-					/*bark[0][0] = 3.0;*/
-					/*unsigned int aaaa = mesh->getMesh()->getVertexFormat().getVertexSize();*/
-					/*mesh->getMesh()->getVertexFormat().getElement(vertID) = const gameplay::VertexFormat::Element(gameplay::VertexFormat::POSITION,3);*/
-					/*std::cout << pos << std::endl;*/
 				}
 				mesh->getMesh()->setVertexData(vertexRef[meshName], 0, mesh->getMesh()->getVertexCount());
 			}
 		}
 
+		//Handle Zooming.
 		if (head.zoomCount > 0)
 		{
 			int len;
@@ -785,31 +693,6 @@ void MayaViewer::msgDirector()
 
 		prevHead = head;
 	}
-
-	//int a=0;
-	//size_t hSize = sizeof(int);
-	//consumer.recv((char*)&a, hSize);
-
-	//switch (a)
-	//{
-	//case meshType:
-	//	//MeshHeader head = readHeader();
-	//	//Mesh* mesh1 = setupInputMesh(head);
-	//	break;
-	//case transformType:
-	//	//Need len ahead of time.
-	//	char name[8] = "0";
-	//	size_t nameLength;
-	//	double transform[10];
-	//	size_t tLen = sizeof(transform);
-	//	consumer.recv(name, nameLength);
-	//	consumer.recv((char*)transform, tLen);
-	//	applyTransformation(name, transform);
-	//	break;
-	//	
-	//}
-
-
 }
 
 void MayaViewer::applyTransformation(const char * name, double * transform)

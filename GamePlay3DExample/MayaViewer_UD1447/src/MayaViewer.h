@@ -84,6 +84,9 @@ private:
 	//The strings are the relevant node name.
 	std::unordered_map<std::string, Material*> individualMatMap;
 	std::unordered_map<std::string, Material*> individualColMatMap;
+
+	// As of now I am unable to retrieve the verticies through gameplay3D's interface.
+	// As such I will store the array of float values for my verts seperately when I input them for now.
 	std::unordered_map<std::string, float*> vertexRef;
 	//unordered_map MaterialMap;
 };
