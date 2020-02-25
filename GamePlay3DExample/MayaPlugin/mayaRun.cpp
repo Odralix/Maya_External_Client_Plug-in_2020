@@ -979,8 +979,9 @@ void timerCallback(float elapsedTime, float lastTime, void *clientData)
 
 	if ((batch.GetMasterHeader()->meshCount != 0) || (batch.GetMasterHeader()->transformCount != 0) 
 		|| batch.GetMasterHeader()->removedCount != 0 || batch.GetMasterHeader()->camSwitched 
-		|| batch.GetMasterHeader()->matCount !=0 || batch.matSwitchedMap.size() != 0 || batch.GetMasterHeader()->zoomCount != 0
-		|| batch.GetMasterHeader()->camCount !=0 || batch.GetMasterHeader()->numMeshChanged != 0)
+		|| batch.GetMasterHeader()->matCount !=0 || batch.matSwitchedMap.size() != 0 
+		|| batch.GetMasterHeader()->zoomCount != 0 || batch.GetMasterHeader()->camCount !=0 
+		|| batch.GetMasterHeader()->numMeshChanged != 0 || batch.GetMasterHeader()->numRenamed != 0)
 	{
 		batch.GetMasterHeader()->msgNr++;
 		/*//cout  << "MsgNr: " << batch.GetMasterHeader()->msgNr << endl;*/
@@ -991,6 +992,21 @@ void timerCallback(float elapsedTime, float lastTime, void *clientData)
 		//cout  << "Mat Count " << batch.GetMasterHeader()->matCount << endl;
 		//cout  << "MatSwitched Count " << batch.GetMasterHeader()->matSwitchedCount << endl;
 		//cout  << "Cam switched " << batch.GetMasterHeader()->camSwitched << endl;*/
+
+		for (const auto& nameIt : batch.renamingMap)
+		{
+			int nLen = nameIt.first.length();
+			//Size of old name.
+			producer.send(&nLen, sizeof(int));
+			//Send old name.
+			producer.send(nameIt.first.c_str(), nameIt.first.length());
+
+			nLen = nameIt.second.length();
+			//Size of new name.
+			producer.send(&nLen, sizeof(int));
+			//Send new name.
+			producer.send(nameIt.second.c_str(), nameIt.second.length());
+		}
 
 		for (const auto& it1 : batch.camMap)
 		{
@@ -1184,22 +1200,22 @@ void nameChanged(MObject &node, const MString &prevName, void *clientData)
 		MFnDependencyNode dependNode(node);
 		name = dependNode.name();
 
-		if (node.hasFn(MFn::kMesh))
-		{
-			prevName.asChar();
-			getParentDagNodeName(node);
-		}
-		else
-		{
-			prevName.asChar();
-			name;
-		}
-
 		if (prevName != name)
 		{
 			cout  << "Node name changed!" << endl;
 			cout  << "Node: " + prevName << endl;
 			cout  << "Is now Node: " + name << endl;
+
+			if (node.hasFn(MFn::kTransform))
+			{
+				cout << "enter batch" << endl;
+				batch.SetRename((std::string)prevName.asChar(), (std::string)name.asChar());
+				cout << "done batch" << endl;
+			}
+			//else
+			//{
+			//	batch.SetRename((std::string)prevName.asChar(), (std::string)name.asChar());
+			//}
 		}
 	}
 }

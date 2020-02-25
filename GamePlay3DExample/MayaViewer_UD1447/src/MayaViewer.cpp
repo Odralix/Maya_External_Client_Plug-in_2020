@@ -354,9 +354,42 @@ void MayaViewer::msgDirector()
 	{
 		consumer.recv((char*)&head, Mlen);
 		prevOffset = Mlen;
+
+		if (head.numRenamed != 0)
+		{
+			for (int i = 0; i < head.numRenamed; i++)
+			{
+				size_t nLen;
+
+				int nameLen = -1;
+
+				consumer.recv((char*)&nameLen, nLen);
+				char*name = new char[nameLen];
+				consumer.recv(name, nLen);
+
+				std::string oldName(name,nameLen);
+				delete[] name;
+
+				consumer.recv((char*)&nameLen, nLen);
+				name = new char[nameLen];
+				consumer.recv(name, nLen);
+
+				std::string newName(name, nameLen);
+				delete[] name;
+
+				if (_scene->findNode(oldName.c_str()))
+				{
+					Node * namedNode = _scene->findNode(oldName.c_str());
+					namedNode->setId(newName.c_str());
+				}
+
+			}
+		}
+
 		if (head.camCount > 0)
 		{
 			size_t nLen;
+
 			for (int i = 0; i < head.camCount; i++)
 			{
 				char name[42] = {};

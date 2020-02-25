@@ -166,32 +166,16 @@ void MayaBatchOutput::SetVert(std::string& meshName, unsigned int vertID, float 
 	}
 }
 
-//void MayaBatchOutput::SetVerts(std::string & meshName, std::vector<float[3]> &changedVerts)
-//{
-//	if (movedVertMap.find(meshName) == movedVertMap.end())
-//	{
-//		//If a map doesn't exist yet it definitely hasn't been counted yet.
-//		m_MasterHead.numVertsChanged++;
-//		movedVertMap[meshName].reserve(changedVerts.size());
-//	}
-//
-//	movedVertMap[meshName] = changedVerts;
-//}
-//
-//void MayaBatchOutput::SetVerts(std::string & meshName, std::vector<int>& vertID, float vertVals[4])
-//{
-//	if (movedVertMap.find(meshName) == movedVertMap.end())
-//	{
-//		//If a map doesn't exist yet it definitely hasn't been counted yet.
-//		m_MasterHead.numVertsChanged++;
-//	}
-//
-//
-//	for (int i = 0; i < 3; i++)
-//	{
-//		movedVertMap[meshName][vertID][i] = vertVals[i];
-//	}
-//}
+void MayaBatchOutput::SetRename(std::string & oldName, std::string& newName)
+{
+	//Only need to add the name once.
+	if (renamingMap.find(oldName) == renamingMap.end())
+	{
+		m_MasterHead.numRenamed++;
+	}
+
+	renamingMap[oldName] = newName;
+}
 
 void  MayaBatchOutput::RemoveObject(std::string name)
 {
@@ -217,7 +201,6 @@ std::string * MayaBatchOutput::getSwitchedName()
 
 void MayaBatchOutput::Reset()
 {
-	/*m_MasterHead.camChanged = false;*/
 	m_MasterHead.camSwitched = false;
 	m_MasterHead.camCount = 0;
 	m_MasterHead.meshCount = 0;
@@ -227,6 +210,7 @@ void MayaBatchOutput::Reset()
 	m_MasterHead.matSwitchedCount = 0;
 	m_MasterHead.zoomCount = 0;
 	m_MasterHead.numMeshChanged = 0;
+	m_MasterHead.numRenamed = 0;
 	removeNames.clear();
 	for (const auto& nr : transformMap)
 	{
@@ -240,11 +224,7 @@ void MayaBatchOutput::Reset()
 	{
 		delete[] nr.second.colors;
 	}
-	//The map should have to be cleared internally but I don't have access
-	//for (const auto& nr : vertMap)
-	//{
-	//	nr.second.clear()
-	//}
+
 	camMap.clear();
 	transformMap.clear();
 	meshMap.clear();
@@ -252,4 +232,5 @@ void MayaBatchOutput::Reset()
 	matSwitchedMap.clear();
 	orthoZoomMap.clear();
 	vertMap.clear();
+	renamingMap.clear();
 }

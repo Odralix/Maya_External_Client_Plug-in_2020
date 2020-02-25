@@ -24,6 +24,7 @@ public:
 	void SetCamOrthoZoom(std::string & camName, float zoom[2]);
 	void SetVertPos(std::string & meshName, unsigned int vertID, float vertVals[4]);
 	void SetVert(std::string& meshName, unsigned int vertID, float vertVals[8]);
+	void SetRename(std::string& oldName, std::string& newName);
 	/*void SetVerts(std::string & meshName, std::vector<float[3]> &changedVerts);*/
 
 	void RemoveObject(std::string name);
@@ -39,6 +40,7 @@ public:
 	std::unordered_map <std::string, std::string> matSwitchedMap;
 	std::unordered_map <std::string, float[2]> orthoZoomMap;
 	std::unordered_map<std::string, std::unordered_map<unsigned int, float[8]>> vertMap;
+	std::unordered_map<std::string, std::string> renamingMap;
 	//std::unordered_map<std::string, std::vector<float[3]>> movedVertMap;
 	//std::unordered_map<std::string, float[4]> vertMap;
 
