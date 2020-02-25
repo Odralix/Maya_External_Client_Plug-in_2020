@@ -381,6 +381,18 @@ void MayaViewer::msgDirector()
 				{
 					Node * namedNode = _scene->findNode(oldName.c_str());
 					namedNode->setId(newName.c_str());
+
+					//If it's a mesh we must rearrange the materials too.
+					if (individualMatMap.count(oldName) != 0)
+					{
+						Material * tmp = individualMatMap[oldName];
+						individualMatMap.erase(oldName);
+						individualMatMap[newName] = tmp;
+
+						Material * tmp2 = individualColMatMap[oldName];
+						individualColMatMap.erase(oldName);
+						individualColMatMap[newName] = tmp2;
+					}
 				}
 
 			}
