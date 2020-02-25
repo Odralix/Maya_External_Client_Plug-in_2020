@@ -31,6 +31,16 @@ MayaBatchOutput batch;
 
 bool isExtruding = false;
 
+MString getParentDagNodeName(MObject obj)
+{
+	//Note, the name is technically the transform and not the mesh.
+	MFnDagNode dagSearch(obj);
+	MObject handle = dagSearch.parent(0);
+	MFnDagNode parent(handle);
+
+	return parent.name();
+}
+
 void SendTransform(MObject transformNode)
 {
 	MFnDependencyNode nameFetch(transformNode);
@@ -47,10 +57,9 @@ void SendTransform(MObject transformNode)
 	MDagPath tNodeDag;
 
 	path.getPath(tNodeDag);
-
+	//Get the matrix with respect to parent transforms.
 	MMatrix worldMat = tNodeDag.inclusiveMatrix();
 
-	MFnTransform parser;
 	const MTransformationMatrix aMat(worldMat);
 
 	MVector trans = aMat.getTranslation(MSpace::kWorld, &status);
@@ -63,6 +72,7 @@ void SendTransform(MObject transformNode)
 	double quatDouble[4];
 	aMat.getRotationQuaternion(quatDouble[0], quatDouble[1], quatDouble[2], quatDouble[3]);
 
+	//Prepare to store the whole transform somewhere.
 	double transform[10];
 
 	for (int i = 0; i < 3; i++)
@@ -76,6 +86,7 @@ void SendTransform(MObject transformNode)
 		transform[i] = quatDouble[i - 6];
 	}
 
+	//Prepare name for sending.
 	int len = 0;
 	const char* name = nameFetch.name().asChar(len);
 
@@ -84,8 +95,21 @@ void SendTransform(MObject transformNode)
 	{
 		head.name[i] = name[i];
 	}
-
+	//Send transform to batch.
 	batch.SetTransform(head, transform);
+
+	//Ensure Children in hierarchy gets updated too.
+	for (int i = 0; i < tNodeDag.childCount(); i++)
+	{
+		MObject child = tNodeDag.child(i);
+
+		/*cout << "trans child: " << child.apiTypeStr() << endl;*/
+
+		if (child.hasFn(MFn::kTransform))
+		{
+			SendTransform(child);
+		}
+	}
 }
 
 void nodeTransformChanged(MNodeMessage::AttributeMessage msg, MPlug &plug, MPlug &otherPlug, void* x)
@@ -237,12 +261,8 @@ void SendMaterialName(MObject &node)
 			{
 				MFnDependencyNode funcMat(mats[0].node());
 				//cout  << "Material Name: " << funcMat.name().asChar() << endl;
-				//Note, the name is technically the transform and not the mesh.
-				MFnDagNode dagSearch(node);
-				MObject handle = dagSearch.parent(0);
-				MFnDagNode parent(handle);
 
-				batch.SetMatSwitched((std::string)parent.name().asChar(), (std::string) funcMat.name().asChar());
+				batch.SetMatSwitched((std::string)getParentDagNodeName(node).asChar(), (std::string) funcMat.name().asChar());
 				//batch.meshMap[(std::string)parent.name().asChar()].SetMatName(funcMat.name().asChar(), funcMat.name().length());
 			}
 		}
@@ -277,13 +297,8 @@ void SendMaterialNameMatInput(MObject &node)
 				dagSetMembers[j].connectedTo(meshPlugs, true, false);
 				MFnDependencyNode mesh(meshPlugs[0].node());
 
-				MFnDagNode dagSearch(meshPlugs[0].node());
-				MObject handle = dagSearch.parent(0);
-				MFnDagNode parent(handle);
-
-				batch.SetMatSwitched((std::string)parent.name().asChar(), (std::string) mat.name().asChar());
+				batch.SetMatSwitched((std::string)getParentDagNodeName(meshPlugs[0].node()).asChar(), (std::string) mat.name().asChar());
 				//batch.SetMatSwitched()
-				////cout  << parent.name() << endl;
 			}
 		}
 
@@ -453,12 +468,10 @@ void SendMesh(MObject Mnode)
 		//Note, the name is technically the transform and not the mesh.
 		MFnDagNode dagSearch(Mnode);
 		MObject handle = dagSearch.parent(0);
-		MFnDagNode parent(handle);
 
 		//Replace old vertex array and print the new info out.
 		mapOfVertexArrays[meshName] = vertexArr.length();
-		//cout  << parent.name().asChar() << " Topology Changed! " << "New vertex locations: " << endl;
-
+		
 		//Getting the number of verts
 		MeshHeader meshHead;
 
@@ -467,7 +480,7 @@ void SendMesh(MObject Mnode)
 		//Enter the name.
 		for (int i = 0; i < meshNode.name().length(); i++)
 		{
-			meshHead.meshName[i] = parent.name().asChar()[i];
+			meshHead.meshName[i] = getParentDagNodeName(Mnode).asChar()[i];
 		}
 
 		//In certain cases such as when a mesh is extruded or undo-ed the transform must be sent as well.
@@ -617,10 +630,7 @@ void nodeMeshAttributeChanged(MNodeMessage::AttributeMessage msg, MPlug &plug, M
 			}*/
 			/*//cout  << "Entered plug change" << endl;*/
 			//Note, the name is technically the transform and not the mesh.
-			MFnDagNode dagSearch(plug.node());
-			MObject handle = dagSearch.parent(0);
-			MFnDagNode parent(handle);
-			//////cout  << "In mesh " << parent.name() << endl;
+
 			//////cout  << plug.partialName() << " Was changed! The vertex values are now: " << endl;
 
 			//// As we already have the vertID I feel like the face verticies should be accesable through the control point.
@@ -647,7 +657,7 @@ void nodeMeshAttributeChanged(MNodeMessage::AttributeMessage msg, MPlug &plug, M
 			for (int i = 0; i < conFaces.length(); i++)
 			{
 				mesh.getFaceVertexBlindDataIndex(conFaces[i], plug.logicalIndex(), faceVertexId);
-				batch.SetVertPos((std::string)parent.name().asChar(), faceVertexId, pos);
+				batch.SetVertPos((std::string)getParentDagNodeName(plug.node()).asChar(), faceVertexId, pos);
 			}
 		}
 	}
@@ -658,7 +668,7 @@ void nodeMeshAttributeChanged(MNodeMessage::AttributeMessage msg, MPlug &plug, M
 		MFnMesh inputMesh(plug.node());
 
 		MObject Mnode = plug.node();
-		//cout  << "entered Topology change" << endl;
+		cout  << "entered Topology change" << endl;
 
 		MFloatPointArray vertexArr;
 
@@ -702,10 +712,6 @@ void nodeMeshAttributeChanged(MNodeMessage::AttributeMessage msg, MPlug &plug, M
 					MItMeshPolygon itPoly(path, obj);
 					while (!itPoly.isDone())
 					{
-						//Note, the name is technically the transform and not the mesh.
-						MFnDagNode dagSearch(plug.node());
-						MObject handle = dagSearch.parent(0);
-						MFnDagNode parent(handle);
 
 						int faceVertexID;
 						MIntArray faceIds;
@@ -761,7 +767,7 @@ void nodeMeshAttributeChanged(MNodeMessage::AttributeMessage msg, MPlug &plug, M
 									vertData[k+6] = uv[k];
 								}
 
-								batch.SetVert((std::string)parent.name().asChar(), faceVertexID, vertData);
+								batch.SetVert((std::string)getParentDagNodeName(plug.node()).asChar(), faceVertexID, vertData);
 
 							}
 						}
@@ -1177,6 +1183,18 @@ void nameChanged(MObject &node, const MString &prevName, void *clientData)
 		MString name;
 		MFnDependencyNode dependNode(node);
 		name = dependNode.name();
+
+		if (node.hasFn(MFn::kMesh))
+		{
+			prevName.asChar();
+			getParentDagNodeName(node);
+		}
+		else
+		{
+			prevName.asChar();
+			name;
+		}
+
 		if (prevName != name)
 		{
 			cout  << "Node name changed!" << endl;
@@ -1188,15 +1206,7 @@ void nameChanged(MObject &node, const MString &prevName, void *clientData)
 
 void viewChangedCB(const MString& str, MObject &node, void* clientData)
 {
-	//cout  << "CALLED!!" << endl;
-	//cout  << str << endl;
-
-	MFnDagNode dagSearch(node);
-	MObject handle = dagSearch.parent(0);
-	MFnDagNode parent(handle);
-
-	//cout  << "Gives Node: " << parent.name().asChar() << endl;
-	std::string tmp(parent.name().asChar());
+	std::string tmp(getParentDagNodeName(node).asChar());
 	batch.SwitchedCamera(tmp);
 }
 
@@ -1345,11 +1355,7 @@ void SendCam(MObject node)
 	arr[4] = cam.nearClippingPlane();
 	arr[5] = cam.farClippingPlane();
 
-	MFnDagNode dagSearch(node);
-	MObject handle = dagSearch.parent(0);
-	MFnDagNode parent(handle);
-
-	batch.SetCamera(arr, parent.name().asChar());
+	batch.SetCamera(arr, getParentDagNodeName(node).asChar());
 	/*//cout  <<
 		cam.aspectRatio() << ", " <<
 		cam.farClippingPlane() << ", " <<
@@ -1398,9 +1404,6 @@ void zoomCB(MNodeMessage::AttributeMessage msg, MPlug &plug, MPlug &otherPlug, v
 	if (plug.partialName() == "ow")
 	{
 		/*SendCam(plug.node());*/
-		MFnDagNode dagSearch(plug.node());
-		MObject handle = dagSearch.parent(0);
-		MFnDagNode parent(handle);
 
 		MFnCamera cam(plug.node());
 		float size[2];
@@ -1411,7 +1414,7 @@ void zoomCB(MNodeMessage::AttributeMessage msg, MPlug &plug, MPlug &otherPlug, v
 		// 2/height = [1][1] -> 2/[1][1] = height.
 		size[1] = 2 / cam.projectionMatrix()[1][1];
 
-		batch.SetCamOrthoZoom((string)parent.name().asChar(), size);
+		batch.SetCamOrthoZoom((string)getParentDagNodeName(plug.node()).asChar(), size);
 		//cout  << "The heck: " << cam.orthoWidth() << endl;
 		//cout  << "Horizontal: " << cam.horizontalFieldOfView() *(180 / 3.14159265359) << endl;
 		//cout  << "Vertical: " << cam.verticalFieldOfView()*(180 / 3.14159265359) << endl;
@@ -1467,7 +1470,6 @@ void addCallbacksToExistingNodes()
 	{
 		MFnDagNode dagSearch(iterator2.thisNode());
 		MObject handle = dagSearch.child(0);
-		MFnDagNode parent(handle);
 
 		//Camera is handled seperatly since timer callback apparently isn't fired during camera movement.
 		if (handle.hasFn(MFn::kCamera) == false)
@@ -1508,7 +1510,6 @@ void addCallbacksToExistingNodes()
 	{
 		MFnDagNode dagSearch(camIterator.thisNode());
 		MObject handle = dagSearch.parent(0);
-		MFnDagNode parent(handle);
 
 		/*//cout  <<"Camera Name: " << dagSearch.name() << endl;*/
 		////cout  << "HERE" << endl;
@@ -1592,6 +1593,42 @@ void selectionChangedCB(void* x)
 
 	/*//cout  << "SELECTION CHANGED!" << endl;*/
 }
+
+//Duplication of mesh doesn't trigger attribute changed properly.
+//This is an elaborate scheme to trigger it.
+void duplicateCB(void*clientData)
+{
+	MSelectionList selected;
+	MGlobal::getActiveSelectionList(selected);
+
+	MObject obj;
+
+	for (int i = 0; i < selected.length(); i++)
+	{
+		selected.getDependNode(i, obj);
+
+		if (obj.hasFn(MFn::kTransform))
+		{
+			MFnTransform trans(obj);
+
+			for (int j = 0; j < trans.childCount(); j++)
+			{
+				MObject child = trans.child(j);
+
+				if (child.hasFn(MFn::kMesh))
+				{
+					MFnMesh mesh(child);
+					//This triggers the attribute changed callback.
+					MPoint point;
+					mesh.getPoint(0, point);
+					mesh.setPoint(0, point);
+				}
+			}
+		}
+	}
+
+}
+
 /*
  * Plugin entry point
  * For remote control of maya
@@ -1621,6 +1658,7 @@ EXPORT MStatus initializePlugin(MObject obj) {
 	callbackIdArray.append(MDGMessage::addNodeRemovedCallback(nodeRemoved, "dependNode", NULL, &status));
 	callbackIdArray.append(MTimerMessage::addTimerCallback(0.02f, timerCallback, NULL, &status));
 	callbackIdArray.append(MNodeMessage::addNameChangedCallback(MObject::kNullObj, nameChanged, NULL, &status));
+	callbackIdArray.append(MModelMessage::addAfterDuplicateCallback(duplicateCB, NULL, &status));
 	
 	callbackIdArray.append(MModelMessage::addCallback(MModelMessage::kActiveListModified, selectionChangedCB, NULL, &status));
 
