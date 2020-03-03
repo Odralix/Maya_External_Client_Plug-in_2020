@@ -1,5 +1,5 @@
 # Maya_External_Client_Plug-in
-A school assignment "Implement a real-time communication mechanism between Maya and an external application using message passing through shared memory. The external application will be a rendering engine with basic support for rendering such as transforms, meshes, lights, materials and camera movements."
+A school assignment to "Implement a real-time communication mechanism between Maya and an external application using message passing through shared memory. The external application will be a rendering engine with basic support for rendering such as transforms, meshes, lights, materials and camera movements."
 
 The plug-in is made to function with the "Gameplay3D" game engine. However as the information is passed to the engine through a circular buffer in shared memory with use of a custom-made "Comlib" the plug-in could concievably be quickly refactored to function with almost any game engine provided that it handles vertices in an industry-standard way.
 
