@@ -13,7 +13,7 @@ However if you wish to run the plug-in anyway follow these instructions:
 3. Open Maya 2019 (Please note that the Plug-in is only guranteed to function with VS2017 and Maya2019)
 
 4. Please Ensure that you have the correct filepath in the loadPlugin.py file on line 23.
-it should be <"filePath to unpack location"> /GamePlay3DExample/MayaPlugin/x64/Release/MayaAPI.mll")\n'
+it should be <"filePath to unpacked folder"> /GamePlay3DExample/MayaPlugin/x64/Release/MayaAPI.mll")\n'
 Otherwise it will fail to load the plug-in with maya recieving this message:
 // Warning: line 1: Plug-in, "MayaAPI", is not loaded. // 
 // Error: line 1: Plug-in, "<FilePath on line 23>", was not found on MAYA_PLUG_IN_PATH. // 
