@@ -14,11 +14,18 @@ However if you wish to run the plug-in anyway follow these instructions:
 
 4. Please Ensure that you have the correct filepath in the loadPlugin.py file on line 23.
 it should be <"filePath to unpack location"> /GamePlay3DExample/MayaPlugin/x64/Release/MayaAPI.mll")\n'
-Otherwise building the MayaAPI solution later will erronously fail with:
-Error	MSB3073	The command "python unloadPlugin.py
+Otherwise it will fail to load the plug-in with maya recieving this message:
+// Warning: line 1: Plug-in, "MayaAPI", is not loaded. // 
+// Error: line 1: Plug-in, "<FilePath on line 23>", was not found on MAYA_PLUG_IN_PATH. // 
+
 
 5. In a MEL tab in Maya's script editor enter: commandPort -n ":1234"
-and run it.
+and run it. 
+Building without doing this results somewhat confusingly in the error:
+Error	MSB3073	The command "python unloadPlugin.py
+:VCEnd" exited with code 1.
+
+This error may also appear with a different exit if you do not have the python workload for Visual Studio 2017 installed.
 
 6. Build the MayaAPI solution
 
