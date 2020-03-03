@@ -1,14 +1,12 @@
-// Original Example expanded upon by Ossian Edström
+//Author: Ossian Edström
 #include "maya_includes.h"
 #include <maya/MTimer.h>
 #include <iostream>
 #include <algorithm>
 #include <queue>
-//#include <string>
 #include <map>
 #include "ComLib_reference.h"
 #include <maya/MCameraMessage.h>
-//#include "../Structs.h"
 #include "MayaBatchOutput.h"
 #include <maya/MItSelectionList.h>
 
@@ -92,7 +90,7 @@ void SendTransform(MObject transformNode)
 	batch.SetTransform(head, transform);
 
 	//Ensure Children in hierarchy gets updated too.
-	for (int i = 0; i < tNodeDag.childCount(); i++)
+	for (unsigned int i = 0; i < tNodeDag.childCount(); i++)
 	{
 		MObject child = tNodeDag.child(i);
 
@@ -140,7 +138,7 @@ void SendMaterial(MObject &node)
 	if (plugs.length() != 0)
 	{
 		MString textureName = "";
-		for (int j = 0; j < plugs.length(); j++)
+		for (unsigned int j = 0; j < plugs.length(); j++)
 		{
 			if (plugs[j].node().apiType() == MFn::kFileTexture)
 			{
@@ -160,7 +158,7 @@ void SendMaterial(MObject &node)
 				else
 				{
 					MColor color;
-					for (int j = 0; j < colPlug.numChildren(); j++)
+					for (unsigned int j = 0; j < colPlug.numChildren(); j++)
 					{
 						/*//cout  << colPlug.child(j).name().asChar() << endl;*/
 						colPlug.child(j, &status).getValue(color[j]);
@@ -185,7 +183,7 @@ void SendMaterial(MObject &node)
 		//The plug has no textures which means it's a color mat.
 		//Note: Will also be called for non-lamberts such as StingRay PBS which is not supported or recommended
 		MColor color;
-		for (int j = 0; j < colPlug.numChildren(); j++)
+		for (unsigned int j = 0; j < colPlug.numChildren(); j++)
 		{
 			/*//cout  << colPlug.child(j).name().asChar() << endl;*/
 			colPlug.child(j, &status).getValue(color[j]);
@@ -280,7 +278,7 @@ void SendMaterialNameMatInput(MObject &node)
 	{
 		//cout  << arr.length() << endl;
 		//cout  << "Entered" << endl;
-		for (int i = 0; i < arr.length(); i++)
+		for (unsigned int i = 0; i < arr.length(); i++)
 		{
 			MFnDependencyNode shadingGroup(arr[i].node());
 
@@ -289,7 +287,7 @@ void SendMaterialNameMatInput(MObject &node)
 
 			////cout  << "Numchildren: " << dagSetMembers.numChildren() << endl;
 			////cout  << "NumElements: " << dagSetMembers.numElements() << endl;
-			for (int j = 0; j < dagSetMembers.numElements(); j++)
+			for (unsigned int j = 0; j < dagSetMembers.numElements(); j++)
 			{
 				MPlugArray meshPlugs;
 				dagSetMembers[j].connectedTo(meshPlugs, true, false);
@@ -328,7 +326,7 @@ void SendMesh(MObject Mnode)
 		meshHead.nrOfVerts = inputMesh.numFaceVertices(&status);
 
 		//Enter the name.
-		for (int i = 0; i < meshNode.name().length(); i++)
+		for (unsigned int i = 0; i < meshNode.name().length(); i++)
 		{
 			meshHead.meshName[i] = getParentDagNodeName(Mnode).asChar()[i];
 		}
@@ -376,7 +374,7 @@ void SendMesh(MObject Mnode)
 			for (int j = 0; j < 3; j++)
 			{
 				/*normArr[i*3+j];*/
-				normArr[nCount] = get[j];
+				normArr[nCount] = (float)get[j];
 				/*//cout  << normArr[nCount] << " ";*/
 				nCount++;
 			}
@@ -472,7 +470,7 @@ void nodeMeshAttributeChanged(MNodeMessage::AttributeMessage msg, MPlug &plug, M
 			point.get(pos);
 
 			//Still need to send the position to the value on each face vert which is done through connected faces.
-			for (int i = 0; i < conFaces.length(); i++)
+			for (unsigned int i = 0; i < conFaces.length(); i++)
 			{
 				mesh.getFaceVertexBlindDataIndex(conFaces[i], plug.logicalIndex(), faceVertexId);
 				batch.SetVertPos((std::string)getParentDagNodeName(plug.node()).asChar(), faceVertexId, pos);
@@ -541,14 +539,14 @@ void nodeMeshAttributeChanged(MNodeMessage::AttributeMessage msg, MPlug &plug, M
 						faceIds.append(itPoly.index());
 
 						//For this and each connected face
-						for (int i = 0; i < faceIds.length(); i++)
+						for (unsigned int i = 0; i < faceIds.length(); i++)
 						{
 							//For each face, send all of its verts so that the face normals stay accurate.
 							MIntArray curVerts;
 							mesh.getPolygonVertices(faceIds[i], curVerts);
 
 							//Technically the pos of the connected ones don't change so one improvement would be to skip that.
-							for (int j = 0; j < curVerts.length(); j++)
+							for (unsigned int j = 0; j < curVerts.length(); j++)
 							{
 								/*//cout  << "Vert Index: " << Verts[i] << endl;*/
 
@@ -581,7 +579,7 @@ void nodeMeshAttributeChanged(MNodeMessage::AttributeMessage msg, MPlug &plug, M
 
 								for (int k = 0; k < 3; k++)
 								{
-									vertData[k+3] = normalArr[k];
+									vertData[k+3] = (float)normalArr[k];
 								}
 
 								for (int k = 0; k < 2; k++)
@@ -805,13 +803,13 @@ void timerCallback(float elapsedTime, float lastTime, void *clientData)
 		//Send all renaming messages.
 		for (const auto& nameIt : batch.renamingMap)
 		{
-			int nLen = nameIt.first.length();
+			int nLen = (int) nameIt.first.length();
 			//Size of old name.
 			producer.send(&nLen, sizeof(int));
 			//Send old name.
 			producer.send(nameIt.first.c_str(), nameIt.first.length());
 
-			nLen = nameIt.second.length();
+			nLen = (int)nameIt.second.length();
 			//Size of new name.
 			producer.send(&nLen, sizeof(int));
 			//Send new name.
@@ -853,8 +851,8 @@ void timerCallback(float elapsedTime, float lastTime, void *clientData)
 				//cout  << "Sending mat: " << mat.first << endl;
 				//cout  << "With texture: " << mat.second.name << endl;
 				head.isTextured = true;
-				head.lenMatName = mat.first.length();
-				head.lenTextureName = mat.second.name.length();
+				head.lenMatName = (int) mat.first.length();
+				head.lenTextureName = (int) mat.second.name.length();
 				producer.send(&head, sizeof(head));
 
 				//cout << "Texture Material Name: " << mat.first << endl;
@@ -864,8 +862,8 @@ void timerCallback(float elapsedTime, float lastTime, void *clientData)
 			else
 			{
 				head.isTextured = false;
-				head.lenMatName = mat.first.length();
-				head.lenTextureName = mat.second.name.length();
+				head.lenMatName = (int) mat.first.length();
+				head.lenTextureName = (int) mat.second.name.length();
 				producer.send(&head, sizeof(head));
 
 				//cout << "Material Name: " << mat.first << endl;
@@ -909,8 +907,8 @@ void timerCallback(float elapsedTime, float lastTime, void *clientData)
 			//cout  << "Switched material to: " << nr.second << endl;
 			MatSwitchedHeader lengths;
 
-			lengths.lenMeshName = nr.first.length();
-			lengths.lenMatName = nr.second.length();
+			lengths.lenMeshName = (int) nr.first.length();
+			lengths.lenMatName = (int) nr.second.length();
 
 			producer.send(&lengths, sizeof(lengths));
 			producer.send(nr.first.c_str(), nr.first.length());
@@ -937,12 +935,12 @@ void timerCallback(float elapsedTime, float lastTime, void *clientData)
 		for (const auto& vertMeshIt : batch.vertMap)
 		{
 			/*//cout  << "SENDING CHANGED VERTS FOR MESH: " << vertMeshIt.first << endl;*/
-			int len = vertMeshIt.first.length();
+			int len = (int) vertMeshIt.first.length();
 			//Send name and size of name for mesh.
 			producer.send(&len, sizeof(int));
 			producer.send(vertMeshIt.first.c_str(), len);
 
-			int nrOfVerts = vertMeshIt.second.size();
+			int nrOfVerts = (int) vertMeshIt.second.size();
 			producer.send(&nrOfVerts, sizeof(int));
 
 			for (const auto& vertIt : vertMeshIt.second)
@@ -954,7 +952,7 @@ void timerCallback(float elapsedTime, float lastTime, void *clientData)
 				int nrFloats;
 				
 				//Must explicitly make it float to avoid rounding errors.
-				float val = 0.123456;
+				float val = 0.123456f;
 
 				if ((vertIt.second[3] == val) && (vertIt.second[4] == val) && (vertIt.second[5] == val))
 				{
@@ -979,7 +977,7 @@ void timerCallback(float elapsedTime, float lastTime, void *clientData)
 		//SendZoom
 		for (const auto& zoomIt : batch.orthoZoomMap)
 		{
-			int len = zoomIt.first.length();
+			int len = (int) zoomIt.first.length();
 			//Send length of the name:
 			producer.send(&len, sizeof(int));
 			//Send the name:
@@ -1064,8 +1062,8 @@ void cameraAttributeChanged(MNodeMessage::AttributeMessage msg, MPlug &plug, MPl
 
 				for (int i = 0; i < 3; i++)
 				{
-					camMoveStartPos[i] = roundf(camMoveStartPos[i] * 1000.0f) / 1000.0f;
-					tmp[i] = roundf(tmp[i] * 1000.0f) / 1000.0f;
+					camMoveStartPos[i] = roundf((float)camMoveStartPos[i] * 1000.0f) / 1000.0f;
+					tmp[i] = roundf((float)tmp[i] * 1000.0f) / 1000.0f;
 
 					//cout  << "Quat: " << quat[i] << " Start: " << quatStartPos[i] << endl;
 				}
@@ -1124,7 +1122,7 @@ void SendCam(MObject node)
 	arr[0] = cam.isOrtho();
 	if (cam.isOrtho())
 	{
-		arr[1] = cam.orthoWidth();
+		arr[1] = (float) cam.orthoWidth();
 		// [1][1] in an orthographic projection matrix = 2/top - bottom. 
 		// In mayas case this result is also negated.
 		// As such we can extract the height of the projection matrix using a simple equation.
@@ -1135,12 +1133,12 @@ void SendCam(MObject node)
 	else
 	{
 		//Translating the values into degrees using Pi
-		arr[1] = cam.horizontalFieldOfView() *(180 / 3.14159265359);
-		arr[2] = cam.verticalFieldOfView()*(180 / 3.14159265359);
+		arr[1] = (float) cam.horizontalFieldOfView() *(180 / 3.14159265359f);
+		arr[2] = (float) cam.verticalFieldOfView()*(180 / 3.14159265359f);
 	}
-	arr[3] = cam.aspectRatio();
-	arr[4] = cam.nearClippingPlane();
-	arr[5] = cam.farClippingPlane();
+	arr[3] = (float) cam.aspectRatio();
+	arr[4] = (float) cam.nearClippingPlane();
+	arr[5] = (float) cam.farClippingPlane();
 
 	batch.SetCamera(arr, getParentDagNodeName(node).asChar());
 
@@ -1197,7 +1195,7 @@ void zoomCB(MNodeMessage::AttributeMessage msg, MPlug &plug, MPlug &otherPlug, v
 
 		MFnCamera cam(plug.node());
 		float size[2];
-		size[0] = cam.orthoWidth();
+		size[0] = (float) cam.orthoWidth();
 		// [1][1] in an orthographic projection matrix = 2/top - bottom. 
 		// In mayas case this result is also negated.
 		// As such we can extract the height of the projection matrix using simple equation.
@@ -1349,7 +1347,7 @@ void selectionChangedCB(void* x)
 		isExtruding = false;
 	}
 
-	for (int i = 0; i < selected.length(); i++)
+	for (unsigned int i = 0; i < selected.length(); i++)
 	{
 		selected.getDependNode(i, obj);
 
@@ -1370,7 +1368,7 @@ void duplicateCB(void*clientData)
 
 	MObject obj;
 
-	for (int i = 0; i < selected.length(); i++)
+	for (unsigned int i = 0; i < selected.length(); i++)
 	{
 		selected.getDependNode(i, obj);
 
@@ -1378,7 +1376,7 @@ void duplicateCB(void*clientData)
 		{
 			MFnTransform trans(obj);
 
-			for (int j = 0; j < trans.childCount(); j++)
+			for (unsigned int j = 0; j < trans.childCount(); j++)
 			{
 				MObject child = trans.child(j);
 

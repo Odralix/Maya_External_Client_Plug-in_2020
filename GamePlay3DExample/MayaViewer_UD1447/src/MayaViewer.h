@@ -80,15 +80,14 @@ private:
 	//Since gameplay3D refuses to let me apply the same material to multiple meshes
 	//I'll have to create one color and one texture material for each individual mesh.
 	//And then apply the values of the above maps that stores actually relevant information.
-	//This is terribly inneficent and I would have prepared to simply re-use the same material*
+	//This is terribly innefficent and I would have preferred to simply re-use the same material*
 	//The strings are the relevant node name.
 	std::unordered_map<std::string, Material*> individualMatMap;
 	std::unordered_map<std::string, Material*> individualColMatMap;
 
 	// As of now I am unable to retrieve the verticies through gameplay3D's interface.
-	// As such I will store the array of float values for my verts seperately when I input them for now.
+	// As such I will store the pointer to float values for my verts seperately when I input them for now.
 	std::unordered_map<std::string, float*> vertexRef;
-	//unordered_map MaterialMap;
 };
 
 #endif

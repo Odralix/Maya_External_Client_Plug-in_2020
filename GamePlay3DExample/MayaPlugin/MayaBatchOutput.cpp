@@ -1,3 +1,4 @@
+//Author: Ossian Edström
 #include "MayaBatchOutput.h"
 
 MayaBatchOutput::MayaBatchOutput()
@@ -144,7 +145,7 @@ void MayaBatchOutput::SetVertPos(std::string & meshName, unsigned int vertID, fl
 	//Fill up float with a very specific value to show that it is not to be used.
 	for (int i = 3; i < 8; i++)
 	{
-		vertMap[meshName][vertID][i] = 0.123456;
+		vertMap[meshName][vertID][i] = 0.123456f;
 	}
 }
 

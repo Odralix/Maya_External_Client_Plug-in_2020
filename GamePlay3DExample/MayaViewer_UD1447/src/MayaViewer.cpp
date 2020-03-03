@@ -139,60 +139,6 @@ void MayaViewer::touchEvent(Touch::TouchEvent evt, int x, int y, unsigned int co
     };
 }
 
-Mesh* MayaViewer::createCubeMesh(float size)
-{
-	float a = size * 0.5f;
-	float vertices[] =
-	{
-		-a, -a,  a,    0.0,  0.0,  1.0,   0.0, 0.0,
-		a, -a,  a,    0.0,  0.0,  1.0,   1.0, 0.0,
-		-a,  a,  a,    0.0,  0.0,  1.0,   0.0, 1.0,
-		a,  a,  a,    0.0,  0.0,  1.0,   1.0, 1.0,
-		-a,  a,  a,    0.0,  1.0,  0.0,   0.0, 0.0,
-		a,  a,  a,    0.0,  1.0,  0.0,   1.0, 0.0,
-		-a,  a, -a,    0.0,  1.0,  0.0,   0.0, 1.0,
-		a,  a, -a,    0.0,  1.0,  0.0,   1.0, 1.0,
-		-a,  a, -a,    0.0,  0.0, -1.0,   0.0, 0.0,
-		a,  a, -a,    0.0,  0.0, -1.0,   1.0, 0.0,
-		-a, -a, -a,    0.0,  0.0, -1.0,   0.0, 1.0,
-		a, -a, -a,    0.0,  0.0, -1.0,   1.0, 1.0,
-		-a, -a, -a,    0.0, -1.0,  0.0,   0.0, 0.0,
-		a, -a, -a,    0.0, -1.0,  0.0,   1.0, 0.0,
-		-a, -a,  a,    0.0, -1.0,  0.0,   0.0, 1.0,
-		a, -a,  a,    0.0, -1.0,  0.0,   1.0, 1.0,
-		a, -a,  a,    1.0,  0.0,  0.0,   0.0, 0.0,
-		a, -a, -a,    1.0,  0.0,  0.0,   1.0, 0.0,
-		a,  a,  a,    1.0,  0.0,  0.0,   0.0, 1.0,
-		a,  a, -a,    1.0,  0.0,  0.0,   1.0, 1.0,
-		-a, -a, -a,   -1.0,  0.0,  0.0,   0.0, 0.0,
-		-a, -a,  a,   -1.0,  0.0,  0.0,   1.0, 0.0,
-		-a,  a, -a,   -1.0,  0.0,  0.0,   0.0, 1.0,
-		-a,  a,  a,   -1.0,  0.0,  0.0,   1.0, 1.0
-	};
-	short indices[] =
-	{
-		0, 1, 2, 2, 1, 3, 4, 5, 6, 6, 5, 7, 8, 9, 10, 10, 9, 11, 12, 13, 14, 14, 13, 15, 16, 17, 18, 18, 17, 19, 20, 21, 22, 22, 21, 23
-	};
-	unsigned int vertexCount = 24;
-	unsigned int indexCount = 36;
-	VertexFormat::Element elements[] =
-	{
-		VertexFormat::Element(VertexFormat::POSITION, 3),
-		VertexFormat::Element(VertexFormat::NORMAL, 3),
-		VertexFormat::Element(VertexFormat::TEXCOORD0, 2)
-	};
-	Mesh* mesh = Mesh::createMesh(VertexFormat(elements, 3), vertexCount, false);
-	if (mesh == NULL)
-	{
-		GP_ERROR("Failed to create mesh.");
-		return NULL;
-	}
-	mesh->setVertexData(vertices, 0, vertexCount);
-	MeshPart* meshPart = mesh->addPart(Mesh::TRIANGLES, Mesh::INDEX16, indexCount, false);
-	meshPart->setIndexData(indices, 0, indexCount);
-	return mesh;
-}
-
 Mesh * MayaViewer::createImportMesh(float * verts, int* indicies, int vtxNr, int indexNr)
 {
 
@@ -249,11 +195,7 @@ MeshHeader MayaViewer::readHeader()
 
 	return mHead;
 }
-MasterHeader prevHead;
-size_t prevOffset;
 
-
-char prevName[42] = {'\0'};
 void MayaViewer::msgDirector()
 {
 	MasterHeader head;
@@ -262,7 +204,6 @@ void MayaViewer::msgDirector()
 	while (consumer.nextSize() != 0)
 	{
 		consumer.recv((char*)&head, Mlen);
-		prevOffset = Mlen;
 
 		//Apply Renaming changes
 		if (head.numRenamed != 0)
@@ -604,14 +545,6 @@ void MayaViewer::msgDirector()
 			{
 				char name[42] = "0";
 				bool work = consumer.recv(name, nameLength);
-				for(int i = 0; i < 42; i++)
-				{
-					prevName[i] = name[i];
-				}
-				if (prevName[0] == '0')
-				{
-					std::cout << "No name found";
-				}
 				consumer.recv((char*)transform, tLen);
 				applyTransformation(name, transform);
 			}
@@ -690,8 +623,6 @@ void MayaViewer::msgDirector()
 			}
 			delete[] tmpName;
 		}
-
-		prevHead = head;
 	}
 }
 

@@ -1,3 +1,4 @@
+//Author: Ossian Edström
 #pragma once
 
 class Mesh

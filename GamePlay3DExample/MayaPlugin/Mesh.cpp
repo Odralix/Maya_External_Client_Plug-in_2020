@@ -1,3 +1,4 @@
+//Author: Ossian Edström
 #include "Mesh.h"
 #include <unordered_map>
 

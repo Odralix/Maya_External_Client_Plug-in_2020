@@ -23,7 +23,7 @@ ComLib::ComLib(const std::string & secret, const size_t & buffSize, ClientType t
 		NULL,				  // Default security
 		PAGE_READWRITE,		  // Read/write access
 		(DWORD)0,			  // maximum object size (High DWORD)
-		buffSize,			  // maximum object size (Low DWORD) Add 64 to allow for writing several different datatypes at end of buffer if neccesary.
+		(DWORD)buffSize,			  // maximum object size (Low DWORD) Add 64 to allow for writing several different datatypes at end of buffer if neccesary.
 		(LPCWSTR) mySecret.c_str());	  // name of the object
 
 	//From the Docs:

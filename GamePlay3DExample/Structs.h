@@ -1,3 +1,4 @@
+//Author: Ossian Edström
 #pragma once
 
 #define NAME_LEN 42
