@@ -13,7 +13,7 @@ However if you wish to run the plug-in anyway follow these instructions:
 3. Open Maya 2019 (Please note that the Plug-in is only guranteed to function with VS2017 and Maya2019)
 
 4. Please Ensure that you have the correct filepath in the loadPlugin.py file on line 23.
-it should be <filePath to unpack location>/GamePlay3DExample/MayaPlugin/x64/Release/MayaAPI.mll")\n'
+it should be <"filePath to unpack location"> /GamePlay3DExample/MayaPlugin/x64/Release/MayaAPI.mll")\n'
 Otherwise building the MayaAPI solution later will erronously fail with:
 Error	MSB3073	The command "python unloadPlugin.py
 
