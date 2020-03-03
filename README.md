@@ -3,7 +3,7 @@ A school assignment to "Implement a real-time communication mechanism between Ma
 
 The plug-in is made to function with the "Gameplay3D" game engine. However as the information is passed to the engine through a circular buffer in shared memory with use of a custom-made "Comlib" the plug-in could concievably be quickly refactored to function with almost any game engine provided that it handles vertices in an industry-standard way. One would only need to take the msgDirector function and the one it calls and modify them to apply correctly to the chosen engine.
 
-The application is not yet user-friendly and is mostly intended for my own personal use. I do intend to make it a proper plug-in accesable with just a button press in Maya but I will not have the time to do so for another few months I fear.
+The application is not yet user-friendly and is mostly intended for my own personal use. I do intend to make it a proper plug-in that will be accessible with just a button press in Maya but I will not have the time to do so for another few months I fear.
 However if you wish to run the plug-in anyway follow these instructions:
 
 1. Download the GitHub zip and unpack.
