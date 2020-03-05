@@ -25,7 +25,8 @@ Building without doing this results somewhat confusingly in the error:
 Error	MSB3073	The command "python unloadPlugin.py
 :VCEnd" exited with code 1.
 
-This error may also appear with a different exit if you do not have the python workload for Visual Studio 2017 installed.
+This error may also appear with a different exit code if you do not have Python in the Windows PATH variable, fix here:
+https://geek-university.com/python/add-python-to-the-windows-path/
 
 6. Build the MayaAPI solution
 
